@@ -47,13 +47,17 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_identifier = str(payload.get("sub"))
+        if not user_identifier or user_identifier == "None":
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    if user_identifier.isdigit():
+        user = db.query(models.User).filter(models.User.id == int(user_identifier)).first()
+    else:
+        user = db.query(models.User).filter(models.User.email == user_identifier).first()
+
     if user is None or not user.is_active:
         raise credentials_exception
     return user

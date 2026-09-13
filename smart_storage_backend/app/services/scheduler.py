@@ -45,11 +45,21 @@ def check_shelf_life_and_alert():
         today = date.today()
 
         for component in components:
-            days_in_storage = (today - component.stored_date).days
+            if not component.stored_date or component.shelf_life_days is None:
+                continue
+
+            # Safe date normalization (handles str, datetime, or date)
+            stored = component.stored_date
+            if isinstance(stored, str):
+                stored = datetime.strptime(stored[:10], "%Y-%m-%d").date()
+            elif isinstance(stored, datetime):
+                stored = stored.date()
+
+            days_in_storage = (today - stored).days
             days_remaining = component.shelf_life_days - days_in_storage
 
             if days_remaining > settings.SHELF_LIFE_ALERT_THRESHOLD_DAYS:
-                continue  # not close enough yet
+                continue  # Not close enough yet
 
             alert_type = (
                 models.AlertType.shelf_life_exceeded
@@ -61,6 +71,9 @@ def check_shelf_life_and_alert():
                 continue
 
             owner = component.owner
+            if owner is None and component.owner_id is not None:
+                owner = db.query(models.User).filter(models.User.id == component.owner_id).first()
+
             if owner is None or not owner.email:
                 logger.warning("Component %s has no owner/email — skipping alert", component.id)
                 continue
@@ -78,6 +91,7 @@ def check_shelf_life_and_alert():
                 )
                 db.add(log_entry)
                 db.commit()
+                logger.info("Alert email sent successfully to %s for component %s", owner.email, component.part_number)
     except Exception:
         logger.exception("check_shelf_life_and_alert failed")
     finally:
@@ -92,7 +106,7 @@ def start_scheduler():
         hours=interval_hours,
         id="shelf_life_check",
         replace_existing=True,
-        next_run_time=datetime.now(),  # run once immediately on startup too
+        next_run_time=datetime.now(),  # run once immediately on startup
     )
     scheduler.start()
     logger.info("Scheduler started — checking shelf life every %s hour(s)", interval_hours)

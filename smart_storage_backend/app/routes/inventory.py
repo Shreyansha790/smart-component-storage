@@ -45,6 +45,7 @@ def _to_component_out(component: models.Component) -> schemas.ComponentOut:
 
 
 @router.post("", response_model=schemas.ComponentOut, status_code=201)
+@router.post("/", response_model=schemas.ComponentOut, status_code=201)
 def create_component(
     payload: schemas.ComponentCreate,
     db: Session = Depends(get_db),
@@ -105,9 +106,16 @@ def export_inventory_excel(
     data = []
 
     for component in components:
+       today = date.today()
+       stored_dt = component.stored_date or today
+       days_in_storage = (today - stored_dt).days
+       days_until_shelf_life = (component.shelf_life_days or 0) - days_in_storage
+
+    for component in components:
         today = date.today()
-        days_in_storage = (today - component.stored_date).days
-        days_until_shelf_life = component.shelf_life_days - days_in_storage
+        stored_dt = component.stored_date or today
+        days_in_storage = (today - stored_dt).days
+        days_until_shelf_life = (component.shelf_life_days or 0) - days_in_storage
 
         if days_until_shelf_life <= 0:
             status = "EXPIRED"
@@ -123,8 +131,12 @@ def export_inventory_excel(
             "Category": component.category,
             "Cabinet Location": component.cabinet_location,
             "Quantity": component.quantity,
-            "Stored Date": component.stored_date,
-            "Last Accessed Date": component.last_accessed_date,
+            "Stored Date": stored_dt.isoformat() if hasattr(stored_dt, "isoformat") else str(stored_dt),
+            "Last Accessed Date": (
+                component.last_accessed_date.isoformat()
+                if hasattr(component.last_accessed_date, "isoformat")
+                else str(component.last_accessed_date) if component.last_accessed_date else "N/A"
+            ),
             "Min Temperature (°C)": component.min_temperature_c,
             "Max Temperature (°C)": component.max_temperature_c,
             "Max Humidity (%)": component.max_humidity_percent,

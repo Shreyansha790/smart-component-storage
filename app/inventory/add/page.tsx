@@ -63,28 +63,28 @@ export default function AddComponentPage() {
     if (formData.expiryDate) {
       const diffMs = new Date(formData.expiryDate).getTime() - new Date(today).getTime()
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-      if (diffDays > 0) shelfLifeDays = diffDays
+      shelfLifeDays = diffDays > 0 ? diffDays : 1
+    }
+
+    const payload = {
+      batch_id: randomBatch,
+      part_number: formData.name,
+      manufacturer: 'Generic',
+      category: formData.category,
+      cabinet_location: cabinetLocation,
+      quantity: Number(formData.quantity) || 1,
+      stored_date: today,
+      shelf_life_days: shelfLifeDays,
+      min_temperature_c: 15.0,
+      max_temperature_c: 30.0,
+      max_humidity_percent: 60.0,
+      notes: formData.description || 'Added via UI',
     }
 
     try {
       await fetchApi('/inventory', {
         method: 'POST',
-        body: JSON.stringify({
-          batch_id: randomBatch,
-          part_number: formData.name,
-          manufacturer: 'Generic',
-          category: formData.category,
-          cabinet_location: cabinetLocation,
-          quantity: Number(formData.quantity) || 1,
-          stored_date: today,
-          last_accessed_date: today,
-          expiry_date: formData.expiryDate || null,
-          min_temperature_c: 15.0,
-          max_temperature_c: 30.0,
-          max_humidity_percent: 60.0,
-          shelf_life_days: shelfLifeDays,
-          notes: formData.description || 'Added via UI',
-        }),
+        body: JSON.stringify(payload),
       })
 
       router.push('/inventory')
