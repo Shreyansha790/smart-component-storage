@@ -27,7 +27,8 @@ class AlertResponse(BaseModel):
 
 def generate_inventory_alerts(db: Session, user: Optional[models.User] = None) -> List[dict]:
     query = db.query(models.Component)
-    if user:
+    # Only filter by owner if user is NOT an admin
+    if user and getattr(user, "role", None) != models.UserRole.admin and getattr(user, "role", None) != "admin":
         query = query.filter(models.Component.owner_id == user.id)
     components = query.all()
 

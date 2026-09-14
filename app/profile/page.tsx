@@ -1,23 +1,75 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Settings, LogOut } from 'lucide-react'
-import { systemInfo, userProfile } from '@/data/mock-data'
+import { systemInfo } from '@/data/mock-data'
 import { ScreenHeader } from '@/components/app-shell'
 import { ToggleSwitch } from '@/components/toggle-switch'
 
+interface UserData {
+  full_name?: string
+  email: string
+  role?: string
+}
+
 export default function ProfilePage() {
+  const router = useRouter()
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true)
+
   const [prefs, setPrefs] = useState({
     push: true,
     dark: true,
     autoSync: true,
   })
 
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setLoading(false)
+      return
+    }
+
+    fetch('http://localhost:8000/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Unauthorized')
+        return res.json()
+      })
+      .then((data) => setCurrentUser(data))
+      .catch(() => {
+        localStorage.removeItem('token')
+        setCurrentUser(null)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/login')
+  }
+
+  const displayName = currentUser?.full_name || 'User'
+  const displayEmail = currentUser?.email || 'Not logged in'
+  const displayRole = currentUser?.role || 'Guest'
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U'
+
   const stats = [
-    { label: 'Components', value: userProfile.componentsTracked },
-    { label: 'Cabinets', value: userProfile.cabinets },
-    { label: 'Alerts Set', value: userProfile.alertsSet },
+    { label: 'Components', value: 24 },
+    { label: 'Cabinets', value: 3 },
+    { label: 'Alerts Set', value: 5 },
   ]
 
   const preferences = [
@@ -31,12 +83,14 @@ export default function ProfilePage() {
   ]
 
   const system = [
-    { label: 'Connected Cabinets', value: systemInfo.connectedCabinets },
-    { label: 'Last Sync', value: systemInfo.lastSync },
-    { label: 'Firmware', value: systemInfo.firmware },
-    { label: 'Organization', value: systemInfo.organization },
+    { label: 'Version', value: systemInfo.version },
+    { label: 'Status', value: systemInfo.status },
+    { label: 'Active Nodes', value: systemInfo.activeNodes },
+    { label: 'Last Backup', value: systemInfo.lastBackup },
+    { label: 'Database', value: systemInfo.databaseStatus },
+    { label: 'Uptime', value: systemInfo.uptime },
+    { label: 'Environment', value: systemInfo.environment },
   ]
-
   return (
     <div className="pb-6">
       <ScreenHeader
@@ -56,13 +110,13 @@ export default function ProfilePage() {
         <div className="rounded-2xl border border-white/8 bg-card p-4">
           <div className="flex items-center gap-4">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple to-blue text-lg font-bold text-white">
-              {userProfile.initials}
+              {initials}
             </div>
             <div>
-              <h2 className="text-lg font-bold">{userProfile.name}</h2>
-              <p className="text-sm text-blue">{userProfile.email}</p>
-              <span className="mt-1 inline-flex rounded-full border border-lime/30 bg-lime/10 px-2 py-0.5 text-[10px] font-medium text-lime">
-                {userProfile.role}
+              <h2 className="text-lg font-bold">{loading ? 'Loading...' : displayName}</h2>
+              <p className="text-sm text-blue">{loading ? '...' : displayEmail}</p>
+              <span className="mt-1 inline-flex rounded-full border border-lime/30 bg-lime/10 px-2 py-0.5 text-[10px] font-medium uppercase text-lime">
+                {loading ? '...' : displayRole}
               </span>
             </div>
           </div>
@@ -126,7 +180,8 @@ export default function ProfilePage() {
       <section className="mt-4 px-5">
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 py-3.5 text-sm font-semibold text-danger"
+          onClick={handleSignOut}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 py-3.5 text-sm font-semibold text-danger transition-opacity hover:opacity-80"
         >
           <LogOut className="size-4" /> Sign Out
         </button>

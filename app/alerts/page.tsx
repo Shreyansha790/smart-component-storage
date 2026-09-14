@@ -19,7 +19,7 @@ const filters: { id: Filter; label: string }[] = [
 ]
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>(initialAlerts)
+  const [alerts, setAlerts] = useState<Alert[]>([])
   const [filter, setFilter] = useState<Filter>('all')
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -27,18 +27,18 @@ export default function AlertsPage() {
     setLoading(true)
     try {
       const data = await fetchApi<Alert[]>('/alerts')
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setAlerts(data)
       } else {
-        setAlerts(initialAlerts)
+        setAlerts([])
       }
-    } catch {
-      setAlerts(initialAlerts)
+    } catch (err) {
+      console.error('Failed to load alerts:', err)
+      setAlerts([])
     } finally {
       setLoading(false)
     }
   }
-
   useEffect(() => {
     loadAlerts()
   }, [])

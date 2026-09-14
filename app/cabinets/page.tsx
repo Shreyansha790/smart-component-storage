@@ -44,51 +44,32 @@ function CabinetsView() {
             const shelfNum = rowIndex + 1 // Row A = Shelf 1, Row B = Shelf 2
 
             const slots = [1, 2, 3, 4].map((slotNum) => {
-              const slotKey = `${rowLetter}${slotNum}` // e.g. "A1", "B3"
+              const slotKey = `${rowLetter}${slotNum}` // e.g. "A1", "B4"
 
-              // 1. Explicit slot match
-              let itemInSlot = matchingItems.find((item) => {
+              // Explicit slot match using resilient string & regex patterns
+              const itemInSlot = matchingItems.find((item) => {
                 const itemId = String(item.id ?? item.batch_id)
                 if (assignedItemIds.has(itemId)) return false
 
-                const loc: string = (item.cabinet_location || '').toUpperCase().trim()
+                const loc = (item.cabinet_location || '').toUpperCase().trim()
 
-                // Explicitly type tokens to satisfy TypeScript strict mode
-                const tokens = (loc.split(/[-–—/]/) as string[]).map((t: string) => t.trim())
-                if (tokens.length >= 3) {
-                  const sPart = tokens[1].replace(/[^0-9]/g, '')
-                  const slPart = tokens[2].replace(/[^0-9]/g, '')
-                  if (
-                    (sPart === String(shelfNum) || tokens[1].includes(rowLetter)) &&
-                    slPart === String(slotNum)
-                  ) {
-                    return true
-                  }
-                }
+                // 1. Row match: "ROW-B", "ROW B", "SHELF 2", "SHELF B"
+                const hasRow =
+                  loc.includes(`ROW-${rowLetter}`) ||
+                  loc.includes(`ROW ${rowLetter}`) ||
+                  loc.includes(`SHELF ${shelfNum}`) ||
+                  loc.includes(`SHELF ${rowLetter}`)
 
-                // Check named formats like "SLOT B3", "ROW-B3", "SHELF 2 - SLOT 3"
-                const matchesKey = loc.includes(`SLOT ${slotKey}`) || loc.includes(`ROW-${slotKey}`)
-                const matchesRowAndCol =
-                  (loc.includes(`ROW-${rowLetter}`) || loc.includes(`SHELF ${shelfNum}`) || loc.includes(`SHELF ${rowLetter}`)) &&
-                  (loc.includes(`SLOT ${slotNum}`) || loc.endsWith(` ${slotNum}`))
+                // 2. Slot match: "SLOT 4", "SLOT-4", "B4", or ends with the digit
+                const hasSlot =
+                  loc.includes(`SLOT ${slotNum}`) ||
+                  loc.includes(`SLOT-${slotNum}`) ||
+                  loc.includes(`SLOT ${rowLetter}${slotNum}`) ||
+                  loc.includes(`ROW-${rowLetter}${slotNum}`) ||
+                  new RegExp(`\\b${slotNum}\\b`).test(loc.split('SLOT')[1] || '')
 
-                return matchesKey || matchesRowAndCol
+                return hasRow && hasSlot
               })
-
-              // 2. Sequential fallback for unassigned items without explicit slots
-              if (!itemInSlot) {
-                const unassignedItem = matchingItems.find((item) => {
-                  const itemId = String(item.id ?? item.batch_id)
-                  if (assignedItemIds.has(itemId)) return false
-
-                  const uLoc: string = (item.cabinet_location || '').toUpperCase()
-                  return !uLoc.includes('- 1 -') && !uLoc.includes('- 2 -') && !uLoc.includes('SHELF')
-                })
-
-                if (unassignedItem) {
-                  itemInSlot = unassignedItem
-                }
-              }
 
               if (itemInSlot) {
                 assignedItemIds.add(String(itemInSlot.id ?? itemInSlot.batch_id))
@@ -168,6 +149,8 @@ function CabinetsView() {
 
   const handleAddComponent = async (slotId: string, newComponent: SlotComponent) => {
     const cleanSlotId = slotId.replace(/^ROW-/, '').trim()
+    const rowChar = cleanSlotId.charAt(0) || 'A'
+    const slotNumber = cleanSlotId.slice(1) || '1'
 
     try {
       await fetchApi('/inventory', {
@@ -177,7 +160,7 @@ function CabinetsView() {
           part_number: newComponent.name,
           manufacturer: 'Generic',
           category: 'Other',
-          cabinet_location: `${cabinet.id} - Shelf 1 - Slot ${cleanSlotId}`,
+          cabinet_location: `${cabinet.id} - ROW-${rowChar} - SLOT ${slotNumber}`,
           quantity: Number(newComponent.quantity) || 1,
           stored_date: new Date().toISOString().split('T')[0],
           shelf_life_days: 365,

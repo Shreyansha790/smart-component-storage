@@ -1,6 +1,6 @@
 """
 Background job (APScheduler) that periodically scans the inventory and
-emails the owning user when a component is approaching (or has exceeded)
+emails the owning user and all admins when a component is approaching (or has exceeded)
 its manufacturer shelf-life limit.
 
 Duplicate-alert protection: for each (component, alert_type) we only send
@@ -38,7 +38,7 @@ def _already_alerted_today(db: Session, component_id: int, alert_type: models.Al
 
 
 def check_shelf_life_and_alert():
-    """Scans all components; emails the owner if nearing/over shelf-life limit."""
+    """Scans all components; emails the owner and all admins if nearing/over shelf-life limit."""
     db: Session = SessionLocal()
     try:
         components = db.query(models.Component).all()
@@ -70,28 +70,44 @@ def check_shelf_life_and_alert():
             if _already_alerted_today(db, component.id, alert_type):
                 continue
 
+            # 1. Collect recipient emails: Component Owner + All Admins
+            recipients = set()
+
             owner = component.owner
             if owner is None and component.owner_id is not None:
                 owner = db.query(models.User).filter(models.User.id == component.owner_id).first()
 
-            if owner is None or not owner.email:
-                logger.warning("Component %s has no owner/email — skipping alert", component.id)
+            if owner and owner.email:
+                recipients.add(owner.email)
+
+            # Query all registered admin users
+            admins = db.query(models.User).filter(models.User.role == "admin").all()
+            for admin in admins:
+                if admin.email:
+                    recipients.add(admin.email)
+
+            if not recipients:
+                logger.warning("Component %s has no recipients (no owner or admin email) — skipping alert", component.id)
                 continue
 
             subject, body_html = build_shelf_life_email(component, days_in_storage, days_remaining)
-            sent = send_email(owner.email, subject, body_html)
 
-            if sent:
-                log_entry = models.AlertLog(
-                    component_id=component.id,
-                    alert_type=alert_type,
-                    message=f"{days_in_storage} days stored / {component.shelf_life_days} day limit "
-                            f"({days_remaining} day(s) remaining)",
-                    email_sent_to=owner.email,
-                )
-                db.add(log_entry)
-                db.commit()
-                logger.info("Alert email sent successfully to %s for component %s", owner.email, component.part_number)
+            # 2. Dispatch email to each recipient and log
+            for recipient_email in recipients:
+                sent = send_email(recipient_email, subject, body_html)
+
+                if sent:
+                    log_entry = models.AlertLog(
+                        component_id=component.id,
+                        alert_type=alert_type,
+                        message=f"{days_in_storage} days stored / {component.shelf_life_days} day limit "
+                                f"({days_remaining} day(s) remaining)",
+                        email_sent_to=recipient_email,
+                    )
+                    db.add(log_entry)
+                    logger.info("Alert email sent successfully to %s for component %s", recipient_email, component.part_number)
+
+            db.commit()
     except Exception:
         logger.exception("check_shelf_life_and_alert failed")
     finally:
