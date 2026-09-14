@@ -12,3 +12,4 @@ email-validator==2.2.0
 bcrypt==4.0.1
 pandas
 openpyxl
+psycopg2-binary
