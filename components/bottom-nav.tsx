@@ -13,7 +13,12 @@ interface NavItem {
 }
 
 const items: NavItem[] = [
-  { href: '/', label: 'Home', icon: LayoutGrid, match: (p) => p === '/' },
+  {
+    href: '/dashboard',
+    label: 'Home',
+    icon: LayoutGrid,
+    match: (p) => p === '/dashboard' || p === '/',
+  },
   {
     href: '/inventory',
     label: 'Inventory',
@@ -32,7 +37,12 @@ const items: NavItem[] = [
     icon: MapPin,
     match: (p) => p.startsWith('/environment'),
   },
-  { href: '/profile', label: 'Profile', icon: User, match: (p) => p.startsWith('/profile') },
+  {
+    href: '/profile',
+    label: 'Profile',
+    icon: User,
+    match: (p) => p.startsWith('/profile'),
+  },
 ]
 
 export function BottomNav() {

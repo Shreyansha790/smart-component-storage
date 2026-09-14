@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { components as fallbackComponents } from '@/data/mock-data'
-import { fetchApi } from '@/lib/api'
 import type { Component } from '@/types'
 import { ScreenHeader } from '@/components/app-shell'
 import { RefreshCw, AlertOctagon, Clock, ShieldCheck, HelpCircle } from 'lucide-react'
@@ -40,13 +39,53 @@ export default function ExpiryPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const data = await fetchApi<Component[]>('/components')
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+
+      const response = await fetch('http://localhost:8000/inventory', {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
       if (Array.isArray(data) && data.length > 0) {
-        setComponentsList(data)
+        const normalized = data.map((item: any) => {
+          let computedExpiry: string | null = null
+
+          if (item.expiryDate || item.expiry_date) {
+            computedExpiry = item.expiryDate || item.expiry_date
+          } else if (item.stored_date && item.shelf_life_days) {
+            const date = new Date(item.stored_date)
+            date.setDate(date.getDate() + Number(item.shelf_life_days))
+            computedExpiry = date.toISOString().split('T')[0]
+          } else if (item.days_until_shelf_life !== undefined && item.days_until_shelf_life !== null) {
+            const date = new Date()
+            date.setDate(date.getDate() + Number(item.days_until_shelf_life))
+            computedExpiry = date.toISOString().split('T')[0]
+          }
+
+          return {
+            ...item,
+            id: String(item.id || item.batch_id),
+            name: item.part_number || item.name || 'Unknown Component',
+            category: item.category || 'General',
+            quantity: item.quantity ?? 0,
+            expiryDate: computedExpiry,
+          }
+        })
+
+        setComponentsList(normalized)
       } else {
         setComponentsList(fallbackComponents)
       }
-    } catch {
+    } catch (err) {
+      console.error('Fetch error on /expiry:', err)
       setComponentsList(fallbackComponents)
     } finally {
       setLoading(false)

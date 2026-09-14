@@ -44,7 +44,7 @@ export default function LoginPage() {
         }
       }
 
-      router.push("/inventory");
+     router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
     } finally {
