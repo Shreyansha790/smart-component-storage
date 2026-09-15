@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import {
@@ -16,6 +17,7 @@ import { ComponentCard } from '@/components/component-card'
 import type { Component } from '@/types'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [componentsList, setComponentsList] = useState<Component[]>(fallbackComponents)
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -24,12 +26,25 @@ export default function DashboardPage() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
+        if (!token) {
+          router.replace('/login')
+          return
+        }
+
         const response = await fetch('http://localhost:8000/inventory', {
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
           },
         })
+
+        if (response.status === 401) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token')
+          }
+          router.replace('/login')
+          return
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to fetch inventory: ${response.status}`)
@@ -74,7 +89,7 @@ export default function DashboardPage() {
     }
 
     fetchInventory()
-  }, [])
+  }, [router])
 
   const totalParts = componentsList.reduce(
     (sum, component) => sum + (component.quantity || 0),

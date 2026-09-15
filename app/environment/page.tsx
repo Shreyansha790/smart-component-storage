@@ -19,9 +19,18 @@ export default function EnvironmentPage() {
   const loadEnvironmentData = async () => {
     setLoading(true)
     try {
-      const data = await fetchApi<any[]>('/cabinets')
+      // Changed from '/cabinets' to '/cabinet' to match FastAPI route
+      const data = await fetchApi<any[]>('/cabinet')
       if (Array.isArray(data) && data.length > 0) {
-        setCabinetList(data)
+        // Map backend fields (current_temp/current_humidity) if present
+        const normalized = data.map((c: any) => ({
+          ...c,
+          id: c.id || c.cabinet_location || 'CAB-A',
+          temperature: c.temperature ?? c.current_temp ?? 24.0,
+          humidity: c.humidity ?? c.current_humidity ?? 45.0,
+          pressure: c.pressure ?? c.pressure_hpa ?? 1013.2,
+        }))
+        setCabinetList(normalized)
       } else {
         setCabinetList(fallbackCabinets)
       }
