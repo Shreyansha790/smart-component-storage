@@ -35,6 +35,7 @@ from app.main import app
 from app import models, auth
 from app.services.jitter_filter import jitter_filter
 from app.services.alert_throttler import alert_throttler
+from app.services.arrhenius_engine import arrhenius_engine
 
 
 # In-memory test engine using StaticPool so all connections share the same in-memory DB
@@ -54,6 +55,7 @@ def setup_database_and_reset_services():
     Base.metadata.create_all(bind=TEST_ENGINE)
     jitter_filter.reset()
     alert_throttler.reset()
+    arrhenius_engine.reset()
     yield
     Base.metadata.drop_all(bind=TEST_ENGINE)
 

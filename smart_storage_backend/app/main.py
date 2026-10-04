@@ -19,6 +19,7 @@ from app.routes import inventory as inventory_routes
 from app.routes import cabinet as cabinet_routes
 from app.routes import alerts as alerts_routes
 from app.routes import smart_logic as smart_logic_routes
+from app.routes import actuators as actuators_routes
 from app.services.scheduler import start_scheduler, stop_scheduler
 from app.services.websocket_manager import ws_manager
 
@@ -65,6 +66,8 @@ app.include_router(inventory_routes.api_router)
 app.include_router(cabinet_routes.router)
 app.include_router(alerts_routes.router)
 app.include_router(smart_logic_routes.router)
+app.include_router(actuators_routes.router)
+
 
 
 @app.websocket("/ws/telemetry")

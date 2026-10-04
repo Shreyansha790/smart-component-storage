@@ -15,6 +15,9 @@ from app import models, schemas, auth
 from app.services.jitter_filter import jitter_filter
 from app.services.websocket_manager import ws_manager
 from app.services.alert_throttler import handle_condition_violation
+from app.services.arrhenius_engine import arrhenius_engine
+from app.services.actuator_service import actuator_service
+
 
 router = APIRouter(prefix="/cabinet", tags=["Cabinet Control"])
 
@@ -144,6 +147,14 @@ async def post_telemetry(
     db.commit()
     db.refresh(cabinet)
 
+    # Record telemetry for cumulative Arrhenius stress hours tracking
+    arrhenius_engine.record_telemetry(
+        cabinet_location=cabinet_location,
+        temp_c=smoothed_temp,
+        humidity_percent=smoothed_humidity,
+        timestamp=cabinet.last_reading_at,
+    )
+
     status_ = _condition_status(cabinet)
 
     # 3. Resilient Alert Throttling & Asynchronous Notification Dispatch
@@ -158,7 +169,16 @@ async def post_telemetry(
             background_tasks=background_tasks,
         )
 
-    # 4. Instantaneous Real-Time Broadcast via WebSocket /ws/telemetry
+    # 4. Closed-Loop Actuator Evaluation using smoothed environmental metrics
+    actuator_commands = actuator_service.evaluate_actuators(
+        cabinet_location=cabinet_location,
+        current_temp=smoothed_temp,
+        current_humidity=smoothed_humidity,
+        target_temp=cabinet.target_temperature_c,
+        target_humidity=cabinet.target_humidity_percent,
+    )
+
+    # 5. Instantaneous Real-Time Broadcast via WebSocket /ws/telemetry
     broadcast_payload = {
         "type": "TELEMETRY_UPDATE",
         "timestamp": int(datetime.utcnow().timestamp()),
@@ -170,23 +190,14 @@ async def post_telemetry(
             "smoothed_humidity": round(smoothed_humidity, 2),
             "door_open": bool(reading.door_open),
         },
-        "actuators": {
-            "peltier_active": False,
-            "ventilation_servo_angle": 0,
-            "slot_rgb_active": {},
-        },
+        "actuators": actuator_commands,
     }
     await ws_manager.broadcast(broadcast_payload)
 
-    # 5. Construct Downlink Response
-    actuator_commands = {
-        "peltier_active": False,
-        "ventilation_servo_angle": 0,
-        "slot_rgb_active": {},
-    }
-
+    # 6. Construct Downlink Response returning dynamic actuator commands
     return _to_cabinet_setting_out(
         cabinet,
         reading=reading,
         actuator_commands=actuator_commands,
     )
+

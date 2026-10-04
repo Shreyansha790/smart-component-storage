@@ -84,6 +84,21 @@ class ComponentOut(ComponentBase):
     days_in_storage: int
     days_until_shelf_life: int
     status: str  # OK / APPROACHING_LIMIT / EXPIRED
+    effective_remaining_days: Optional[float] = None
+    dynamic_degradation_score: Optional[float] = None
+
+
+class ArrheniusDegradationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    component_id: int
+    nominal_shelf_life_days: int
+    stored_days: int
+    cumulative_temp_stress_hours: float
+    cumulative_humidity_stress_hours: float
+    arrhenius_acceleration_factor: float
+    dynamic_degradation_score: float
+    effective_remaining_days: float
+    status: str
 
 
 # ---------------- Cabinet settings & Telemetry ----------------
@@ -134,3 +149,31 @@ class AlertLogOut(BaseModel):
     message: str
     sent_at: datetime
     email_sent_to: EmailStr
+
+
+# ---------------- Actuators ----------------
+
+class ActuatorCommandRequest(BaseModel):
+    peltier_mode: str = Field(..., pattern="^(AUTO|ON|OFF)$")
+    ventilation_mode: str = Field(..., pattern="^(AUTO|OPEN|CLOSED)$")
+    locate_slot: Optional[str] = None
+    locate_color: Optional[str] = Field(default="#00FFCC", pattern="^#([A-Fa-f0-9]{6})$")
+    clear_slots: Optional[bool] = False
+
+
+class ActuatorCommands(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    peltier_active: bool
+    ventilation_servo_angle: int
+    slot_rgb_active: Dict[str, str] = Field(default_factory=dict)
+
+
+class ActuatorStateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    cabinet_location: str
+    peltier_mode: str
+    ventilation_mode: str
+    peltier_active: bool
+    ventilation_servo_angle: int
+    slot_rgb_active: Dict[str, str] = Field(default_factory=dict)
+

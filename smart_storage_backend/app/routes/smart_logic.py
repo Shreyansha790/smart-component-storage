@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import auth, models
+from app import auth, models, schemas
 from app.models import Component, CabinetSetting
-from app.services.smart_logic_adapter import analyze_backend_component
+from app.services.arrhenius_engine import arrhenius_engine
 
 
 router = APIRouter(
@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.get("/component/{component_id}")
+@router.get("/component/{component_id}", response_model=schemas.ArrheniusDegradationOut)
 def analyze_component_with_smart_logic(
     component_id: int,
     db: Session = Depends(get_db),
@@ -40,13 +40,9 @@ def analyze_component_with_smart_logic(
         .first()
     )
 
-    if cabinet is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Cabinet not found"
-        )
-
-    return analyze_backend_component(
-        component,
-        cabinet
+    eval_result = arrhenius_engine.evaluate_component(
+        component=component,
+        cabinet=cabinet,
     )
+
+    return schemas.ArrheniusDegradationOut(**eval_result)

@@ -18,13 +18,17 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas, auth
+from app.services.arrhenius_engine import arrhenius_engine
 
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 api_router = APIRouter(prefix="/api/inventory", tags=["Inventory"])
 
 
-def _to_component_out(component: models.Component) -> schemas.ComponentOut:
+def _to_component_out(
+    component: models.Component,
+    cabinet: Optional[models.CabinetSetting] = None,
+) -> schemas.ComponentOut:
     today = date.today()
     days_in_storage = (today - component.stored_date).days
     days_until_shelf_life = component.shelf_life_days - days_in_storage
@@ -36,11 +40,17 @@ def _to_component_out(component: models.Component) -> schemas.ComponentOut:
     else:
         status_ = "OK"
 
+    eval_result = arrhenius_engine.evaluate_component(component, cabinet=cabinet)
+    effective_remaining = eval_result.get("effective_remaining_days")
+    dynamic_degradation_score = eval_result.get("dynamic_degradation_score")
+
     return schemas.ComponentOut(
         **{c.name: getattr(component, c.name) for c in component.__table__.columns},
         days_in_storage=days_in_storage,
         days_until_shelf_life=days_until_shelf_life,
         status=status_,
+        effective_remaining_days=effective_remaining,
+        dynamic_degradation_score=dynamic_degradation_score,
     )
 
 
@@ -58,7 +68,12 @@ def create_component(
     db.add(component)
     db.commit()
     db.refresh(component)
-    return _to_component_out(component)
+    cabinet = (
+        db.query(models.CabinetSetting)
+        .filter(models.CabinetSetting.cabinet_location == component.cabinet_location)
+        .first()
+    )
+    return _to_component_out(component, cabinet=cabinet)
 
 
 @router.get("", response_model=List[schemas.ComponentOut])
@@ -83,12 +98,42 @@ def list_components(
         )
 
     components = q.all()
-    results = [_to_component_out(c) for c in components]
+    cabinet_locations = {c.cabinet_location for c in components if c.cabinet_location}
+    cabinets_map = {
+        cab.cabinet_location: cab
+        for cab in db.query(models.CabinetSetting).filter(models.CabinetSetting.cabinet_location.in_(cabinet_locations)).all()
+    } if cabinet_locations else {}
+
+    results = [_to_component_out(c, cabinet=cabinets_map.get(c.cabinet_location)) for c in components]
 
     if sort_by_fefo:
-        results.sort(key=lambda r: r.days_until_shelf_life)  # soonest expiry first
+        results.sort(
+            key=lambda r: (
+                r.effective_remaining_days if r.effective_remaining_days is not None else float(r.days_until_shelf_life),
+                r.days_until_shelf_life,
+            )
+        )
 
     return results
+
+
+@router.get("/fefo", response_model=List[schemas.ComponentOut])
+def list_components_fefo(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+    category: Optional[str] = None,
+    cabinet_location: Optional[str] = None,
+    search: Optional[str] = Query(None, description="Matches part number or batch ID"),
+):
+    return list_components(
+        db=db,
+        current_user=current_user,
+        category=category,
+        cabinet_location=cabinet_location,
+        search=search,
+        sort_by_fefo=True,
+    )
+
 
 @api_router.get("/export-excel")
 def export_inventory_excel(
@@ -174,7 +219,12 @@ def get_component(
     component = db.query(models.Component).filter(models.Component.id == component_id).first()
     if not component:
         raise HTTPException(404, "Component not found")
-    return _to_component_out(component)
+    cabinet = (
+        db.query(models.CabinetSetting)
+        .filter(models.CabinetSetting.cabinet_location == component.cabinet_location)
+        .first()
+    )
+    return _to_component_out(component, cabinet=cabinet)
 
 
 @router.patch("/{component_id}", response_model=schemas.ComponentOut)
@@ -194,7 +244,12 @@ def update_component(
 
     db.commit()
     db.refresh(component)
-    return _to_component_out(component)
+    cabinet = (
+        db.query(models.CabinetSetting)
+        .filter(models.CabinetSetting.cabinet_location == component.cabinet_location)
+        .first()
+    )
+    return _to_component_out(component, cabinet=cabinet)
 
 
 @router.post("/{component_id}/mark-accessed", response_model=schemas.ComponentOut)
@@ -211,7 +266,13 @@ def mark_accessed(
     component.last_accessed_date = date.today()
     db.commit()
     db.refresh(component)
-    return _to_component_out(component)
+    cabinet = (
+        db.query(models.CabinetSetting)
+        .filter(models.CabinetSetting.cabinet_location == component.cabinet_location)
+        .first()
+    )
+    return _to_component_out(component, cabinet=cabinet)
+
 
 
 @router.delete("/{component_id}", status_code=204)
