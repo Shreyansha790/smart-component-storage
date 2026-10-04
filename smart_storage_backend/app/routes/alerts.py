@@ -86,13 +86,20 @@ def get_alerts(
 
 @router.patch("/alerts/{alert_id}/read")
 @router.patch("/api/alerts/{alert_id}/read")
-def mark_alert_read(alert_id: str):
+def mark_alert_read(
+    alert_id: str,
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Mark an alert as read (requires authenticated user)."""
     return {"status": "ok", "id": alert_id, "read": True}
 
 
 @router.post("/alerts/mark-all-read")
 @router.post("/api/alerts/mark-all-read")
-def mark_all_alerts_read():
+def mark_all_alerts_read(
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Mark all alerts as read (requires authenticated user)."""
     return {"status": "ok", "message": "All alerts marked as read"}
 
 

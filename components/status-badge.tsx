@@ -19,11 +19,11 @@ export function StatusBadge({
     <span
       className={cn(
         'inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium',
-        styles[status],
+        styles[status] ?? styles['in-stock'],
         className,
       )}
     >
-      {stockStatusLabel[status]}
+      {stockStatusLabel[status] ?? status}
     </span>
   )
 }

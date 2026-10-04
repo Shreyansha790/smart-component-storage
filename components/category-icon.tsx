@@ -19,6 +19,7 @@ const iconMap: Record<ComponentCategory, LucideIcon> = {
   Transistors: Radio,
   Resistors: Activity,
   Sensors: Gauge,
+  LEDs: Zap,
 }
 
 export function CategoryIcon({
@@ -38,8 +39,8 @@ export function CategoryIcon({
       className={cn(
         'flex size-10 shrink-0 items-center justify-center rounded-xl border',
         tinted
-          ? 'border-warning/30 bg-warning/10 text-warning'
-          : 'border-white/10 bg-white/5 text-foreground',
+            ? 'border-warning/30 bg-warning/10 text-warning'
+            : 'border-white/10 bg-white/5 text-foreground',
         className,
       )}
     >

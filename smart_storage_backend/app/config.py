@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
+    # IoT HMAC Authentication
+    DEVICE_HMAC_SECRET: str = "esp32_super_secret_hmac_key_production_2026"
+
     # SMTP / Email alerts
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
@@ -25,8 +28,13 @@ class Settings(BaseSettings):
     # Shelf-life alert behaviour
     SHELF_LIFE_ALERT_THRESHOLD_DAYS: int = 7
     ALERT_CHECK_INTERVAL_HOURS: int = 12
+    ALERT_COOLDOWN_MINUTES: int = 15
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 settings = Settings()

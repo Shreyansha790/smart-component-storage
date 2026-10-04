@@ -9,7 +9,7 @@ python-multipart==0.0.9
 apscheduler==3.10.4
 python-dotenv==1.0.1
 email-validator==2.2.0
-bcrypt==4.0.1
+bcrypt==3.2.2
 pandas
 openpyxl
 psycopg2-binary

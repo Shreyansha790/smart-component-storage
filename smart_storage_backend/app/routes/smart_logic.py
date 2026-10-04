@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app import auth, models
 from app.models import Component, CabinetSetting
 from app.services.smart_logic_adapter import analyze_backend_component
 
@@ -15,7 +16,8 @@ router = APIRouter(
 @router.get("/component/{component_id}")
 def analyze_component_with_smart_logic(
     component_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
 ):
     component = (
         db.query(Component)

@@ -1,5 +1,5 @@
 import { Zap, TriangleAlert, Info, type LucideIcon } from 'lucide-react'
-import type { Alert, AlertLevel } from '@/types'
+import type { Alert } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface LevelStyle {
@@ -9,7 +9,7 @@ interface LevelStyle {
   title: string
 }
 
-const config: Record<AlertLevel, LevelStyle> = {
+const config: Record<'critical' | 'warning' | 'info', LevelStyle> = {
   critical: {
     icon: Zap,
     wrap: 'border-danger/30 bg-danger/[0.07]',
@@ -37,7 +37,7 @@ export function AlertItem({
   alert: Alert
   onToggleRead?: (id: string) => void
 }) {
-  const style = config[alert.level]
+  const style = config[alert.level as 'critical' | 'warning' | 'info'] || config.info
   const Icon = style.icon
 
   return (
@@ -56,7 +56,7 @@ export function AlertItem({
           {!alert.read && <span className="size-1.5 rounded-full bg-current opacity-70" />}
         </div>
         <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{alert.message}</p>
-        <p className="mt-1 text-[10px] text-muted-foreground/70">{alert.timeAgo}</p>
+        <p className="mt-1 text-[10px] text-muted-foreground/70">{alert.timeAgo || alert.time}</p>
       </div>
       {onToggleRead && (
         <button

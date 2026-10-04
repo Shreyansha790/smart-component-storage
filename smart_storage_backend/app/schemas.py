@@ -3,7 +3,7 @@ Pydantic (v2) schemas used for request validation and API responses.
 """
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 from app.models import UserRole, AlertType
@@ -86,7 +86,7 @@ class ComponentOut(ComponentBase):
     status: str  # OK / APPROACHING_LIMIT / EXPIRED
 
 
-# ---------------- Cabinet settings ----------------
+# ---------------- Cabinet settings & Telemetry ----------------
 
 class CabinetSettingBase(BaseModel):
     target_temperature_c: float
@@ -106,6 +106,7 @@ class CabinetTelemetryIn(BaseModel):
     """Payload the ESP32 posts periodically."""
     temperature_c: float
     humidity_percent: float = Field(..., ge=0, le=100)
+    door_open: Optional[bool] = False
 
 
 class CabinetSettingOut(CabinetSettingBase):
@@ -116,6 +117,11 @@ class CabinetSettingOut(CabinetSettingBase):
     last_reported_humidity_percent: Optional[float]
     last_reading_at: Optional[datetime]
     condition_status: str  # OK / OUT_OF_RANGE / NO_DATA
+    status: Optional[str] = None
+    temperature_c: Optional[float] = None
+    humidity_percent: Optional[float] = None
+    door_open: Optional[bool] = False
+    actuator_commands: Optional[Dict[str, Any]] = None
 
 
 # ---------------- Alerts ----------------
@@ -123,7 +129,7 @@ class CabinetSettingOut(CabinetSettingBase):
 class AlertLogOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    component_id: int
+    component_id: Optional[int] = None
     alert_type: AlertType
     message: str
     sent_at: datetime

@@ -5,7 +5,9 @@ export function CabinetStatusList({ cabinets }: { cabinets: Cabinet[] }) {
   return (
     <ul className="flex flex-col gap-4">
       {cabinets.map((cab) => {
-        const pct = Math.round((cab.usedSlots / cab.totalSlots) * 100)
+        const used = cab.usedSlots ?? cab.rows?.reduce((acc, r) => acc + r.slots.filter((s) => Boolean(s.component)).length, 0) ?? 0
+        const total = cab.totalSlots ?? cab.rows?.reduce((acc, r) => acc + r.slots.length, 0) ?? 8
+        const pct = total > 0 ? Math.round((used / total) * 100) : 0
         const hot = cab.temperature >= 26
         return (
           <li key={cab.id} className="flex flex-col gap-1.5">
@@ -18,7 +20,7 @@ export function CabinetStatusList({ cabinets }: { cabinets: Cabinet[] }) {
               />
               <span className="font-medium">{cab.id}</span>
               <span className="ml-auto font-mono text-muted-foreground">
-                {cab.usedSlots}/{cab.totalSlots}
+                {used}/{total}
               </span>
               <span
                 className={cn(
