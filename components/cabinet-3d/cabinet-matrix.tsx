@@ -1,8 +1,20 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
-import { Eye, Layers, Sparkles, Box } from 'lucide-react'
+import {
+  Layers,
+  Box,
+  RotateCcw,
+  Compass,
+  Sparkles,
+  Maximize2,
+  Sliders,
+  CheckCircle2,
+  AlertTriangle,
+  Flame,
+  Volume2,
+} from 'lucide-react'
 import { DrawerInspection, type DrawerSlotInfo } from './drawer-inspection'
 import { useTelemetryWs } from '@/lib/use-telemetry-ws'
 
@@ -38,7 +50,7 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-A3',
     slotNumber: 'A3',
-    partNumber: 'SHT31-DIS-B Temp/Hum Sensor',
+    partNumber: 'SHT31-DIS-B Temp/Hum',
     batchId: 'BAT-2026-C2',
     shelfLife: '730 days',
     remaining: '610 days',
@@ -52,11 +64,11 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-A4',
     slotNumber: 'A4',
-    partNumber: 'ATmega328P-PU DIP-28',
+    partNumber: 'ATmega328P-PU DIP',
     batchId: 'BAT-2026-M4',
     shelfLife: '365 days',
     remaining: '85 days',
-    degradation: '0.64 (Moderate Thermal Drift)',
+    degradation: '0.64 (Thermal Drift)',
     quantity: 16,
     temperature: '26.8°C',
     humidity: '49.1%',
@@ -66,7 +78,7 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-B1',
     slotNumber: 'B1',
-    partNumber: 'CC1101 Sub-1GHz Transceiver',
+    partNumber: 'CC1101 Sub-1GHz RF',
     batchId: 'BAT-2026-R1',
     shelfLife: '540 days',
     remaining: '420 days',
@@ -80,7 +92,7 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-B2',
     slotNumber: 'B2',
-    partNumber: 'BME680 Environmental Gas',
+    partNumber: 'BME680 Gas Sensor',
     batchId: 'BAT-2026-G7',
     shelfLife: '365 days',
     remaining: '95 days',
@@ -94,7 +106,7 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-B3',
     slotNumber: 'B3',
-    partNumber: 'TPS63020 Buck-Boost Reg',
+    partNumber: 'TPS63020 Buck-Boost',
     batchId: 'BAT-2026-P3',
     shelfLife: '730 days',
     remaining: '680 days',
@@ -108,7 +120,7 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   {
     id: 'ROW-B4',
     slotNumber: 'B4',
-    partNumber: 'INA219 Current/Power Mon',
+    partNumber: 'INA219 Power Monitor',
     batchId: 'BAT-2026-I2',
     shelfLife: '540 days',
     remaining: '390 days',
@@ -121,6 +133,124 @@ const INITIAL_SLOTS: DrawerSlotInfo[] = [
   },
 ]
 
+// Helper to generate crisp canvas texture for drawer faceplates
+function createDrawerFaceTexture(slot: DrawerSlotInfo) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.CanvasTexture(canvas)
+
+  // Brushed Titanium Faceplate Background
+  const grad = ctx.createLinearGradient(0, 0, 512, 512)
+  grad.addColorStop(0, '#1c1b29')
+  grad.addColorStop(0.5, '#151421')
+  grad.addColorStop(1, '#0e0d17')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, 512, 512)
+
+  // Subtle brushed metallic horizontal micro-lines
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)'
+  ctx.lineWidth = 1
+  for (let y = 0; y < 512; y += 4) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(512, y)
+    ctx.stroke()
+  }
+
+  // Inner beveled chamfer border
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.25)'
+  ctx.lineWidth = 8
+  ctx.strokeRect(16, 16, 480, 480)
+
+  // Corner reinforcement rivets
+  ctx.fillStyle = '#64748b'
+  ;[[32, 32], [480, 32], [32, 480], [480, 480]].forEach(([cx, cy]) => {
+    ctx.beginPath()
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+  })
+
+  // Slot Identifier Badge (e.g. "A1")
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 84px "JetBrains Mono", monospace'
+  ctx.fillText(slot.slotNumber, 48, 120)
+
+  // Secondary sub-header
+  ctx.fillStyle = 'rgba(192, 132, 252, 0.8)'
+  ctx.font = '600 24px "Plus Jakarta Sans", sans-serif'
+  ctx.fillText('BAY LOCATOR', 48, 158)
+
+  // Component Part Number (truncated if needed)
+  ctx.fillStyle = '#e2e8f0'
+  ctx.font = 'bold 30px "JetBrains Mono", monospace'
+  const partText = slot.partNumber.length > 22 ? slot.partNumber.slice(0, 20) + '...' : slot.partNumber
+  ctx.fillText(partText, 48, 380)
+
+  // Stock quantity & batch pill
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.8)'
+  ctx.font = '500 24px "JetBrains Mono", monospace'
+  ctx.fillText(`QTY: ${slot.quantity} PCS | ${slot.batchId}`, 48, 420)
+
+  // Bottom Status Indicator Bar
+  let statusColor = '#10b981' // Green
+  if (slot.status === 'APPROACHING_LIMIT') statusColor = '#f59e0b' // Amber
+  if (slot.status === 'EXPIRED') statusColor = '#f43f5e' // Crimson
+
+  ctx.fillStyle = statusColor
+  ctx.fillRect(48, 452, 416, 12)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.anisotropy = 8
+  return texture
+}
+
+// Helper to generate top OLED status display texture
+function createOledDisplayTexture(temp: number, humidity: number, status: string) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1024
+  canvas.height = 128
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.CanvasTexture(canvas)
+
+  // OLED Deep Glass
+  ctx.fillStyle = '#05040a'
+  ctx.fillRect(0, 0, 1024, 128)
+
+  // Digital scanlines
+  ctx.strokeStyle = 'rgba(0, 255, 200, 0.05)'
+  ctx.lineWidth = 1
+  for (let y = 0; y < 128; y += 4) {
+    ctx.beginPath()
+    ctx.moveTo(0, y)
+    ctx.lineTo(1024, y)
+    ctx.stroke()
+  }
+
+  // Cyan Digital Text
+  ctx.fillStyle = '#06b6d4'
+  ctx.font = 'bold 42px "JetBrains Mono", monospace'
+  ctx.fillText(`CAB-A // NEMA-4X ENVIRONMENT`, 40, 56)
+
+  ctx.font = 'bold 36px "JetBrains Mono", monospace'
+  ctx.fillStyle = '#a855f7'
+  ctx.fillText(`TEMP: ${temp.toFixed(1)}°C`, 40, 104)
+
+  ctx.fillStyle = '#38bdf8'
+  ctx.fillText(`HUM: ${humidity.toFixed(1)}% RH`, 380, 104)
+
+  ctx.fillStyle = '#10b981'
+  ctx.fillText(`STATUS: ${status}`, 740, 104)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.anisotropy = 8
+  return texture
+}
+
 export function CabinetMatrix() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -128,35 +258,47 @@ export function CabinetMatrix() {
 
   const [slots, setSlots] = useState<DrawerSlotInfo[]>(INITIAL_SLOTS)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'Perspective' | 'Isometric'>('Perspective')
+  const [viewMode, setViewMode] = useState<'Perspective' | 'Isometric'>('Isometric')
   const [locatedSlotId, setLocatedSlotId] = useState<string | null>(null)
+  const [autoRotate, setAutoRotate] = useState<boolean>(false)
+  const [hoveredSlotNumber, setHoveredSlotNumber] = useState<string | null>(null)
 
   // Three.js scene refs
   const sceneRef = useRef<THREE.Scene | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
-  const drawersMeshMap = useRef<Map<string, THREE.Mesh>>(new Map())
-  const targetCameraPos = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.5, 9))
+  const cabinetGroupRef = useRef<THREE.Group | null>(null)
+  const drawersMeshMap = useRef<Map<string, THREE.Group>>(new Map())
+  const drawerLedMats = useRef<Map<string, THREE.MeshStandardMaterial>>(new Map())
+  const oledMeshRef = useRef<THREE.Mesh | null>(null)
+  const targetCameraPos = useRef<THREE.Vector3>(new THREE.Vector3(7.2, 5.5, 7.8))
 
-  // Initialize Three.js Physical 3D Cabinet Matrix
+  // Mouse interaction state for direct 3D raycasting and drag-to-rotate
+  const isDragging = useRef(false)
+  const previousMousePosition = useRef({ x: 0, y: 0 })
+  const rotationDamping = useRef({ x: 0.15, y: -0.45 })
+  const raycaster = useRef(new THREE.Raycaster())
+  const mouseCoords = useRef(new THREE.Vector2())
+
+  // Initialize Realistic Three.js 3D Environment
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
 
     const width = container.clientWidth || 640
-    const height = 320
+    const height = 360
 
     // 1. Scene & Camera
     const scene = new THREE.Scene()
     sceneRef.current = scene
 
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000)
-    camera.position.set(0, 1.5, 9)
+    camera.position.set(7.2, 5.5, 7.8)
     camera.lookAt(0, 0, 0)
     cameraRef.current = camera
 
-    // 2. WebGL Renderer
+    // 2. High-Performance WebGL Renderer with Shadows & Tone Mapping
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
@@ -165,104 +307,366 @@ export function CabinetMatrix() {
     })
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.2
     rendererRef.current = renderer
 
-    // 3. Lighting (Cyber Industrial Aesthetic)
-    const ambientLight = new THREE.AmbientLight(0x7c3aed, 0.8)
+    // 3. Multi-Point Studio Lighting (Hyper-Realistic Industrial Rig)
+    const ambientLight = new THREE.AmbientLight(0x2e1065, 1.2) // Deep violet ambient
     scene.add(ambientLight)
 
-    const keyLight = new THREE.DirectionalLight(0xd946ef, 1.5)
-    keyLight.position.set(5, 8, 7)
+    // Key Light (Warm Sunlight Angle casting soft shadows)
+    const keyLight = new THREE.DirectionalLight(0xfff1f2, 2.2)
+    keyLight.position.set(8, 12, 9)
+    keyLight.castShadow = true
+    keyLight.shadow.mapSize.width = 1024
+    keyLight.shadow.mapSize.height = 1024
+    keyLight.shadow.camera.near = 1
+    keyLight.shadow.camera.far = 30
+    keyLight.shadow.bias = -0.0005
     scene.add(keyLight)
 
-    const fillLight = new THREE.DirectionalLight(0x06b6d4, 1.2)
-    fillLight.position.set(-6, -2, 5)
-    scene.add(fillLight)
+    // Cool Cyan Rim Light (Sharp edge highlights)
+    const rimLight = new THREE.DirectionalLight(0x06b6d4, 1.8)
+    rimLight.position.set(-9, 4, -6)
+    scene.add(rimLight)
 
-    const topSpot = new THREE.PointLight(0xc084fc, 2, 20)
-    topSpot.position.set(0, 4, 3)
-    scene.add(topSpot)
+    // Under-Glow Neon Accent Light
+    const floorGlow = new THREE.PointLight(0xa855f7, 2.5, 15)
+    floorGlow.position.set(0, -3.5, 2)
+    scene.add(floorGlow)
 
-    // 4. Cabinet Enclosure Chassis (Cyber Titanium Outer Shell)
-    const chassisGeo = new THREE.BoxGeometry(7.6, 4.4, 3.2)
+    // Overhead White Inspection Light
+    const topLight = new THREE.SpotLight(0xffffff, 2.0, 20, Math.PI / 4, 0.3)
+    topLight.position.set(0, 7, 3)
+    scene.add(topLight)
+
+    // 4. Cabinet Master Group (Enables 360-degree interactive rotation)
+    const cabinetGroup = new THREE.Group()
+    cabinetGroupRef.current = cabinetGroup
+    cabinetGroup.rotation.x = rotationDamping.current.x
+    cabinetGroup.rotation.y = rotationDamping.current.y
+    scene.add(cabinetGroup)
+
+    // 5. Floor Shadow Plane & Circular Ground Contact
+    const groundGeo = new THREE.PlaneGeometry(24, 24)
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x05020a,
+      roughness: 0.9,
+      metalness: 0.1,
+    })
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat)
+    groundMesh.rotation.x = -Math.PI / 2
+    groundMesh.position.y = -2.6
+    groundMesh.receiveShadow = true
+    cabinetGroup.add(groundMesh)
+
+    // Ground Grid Wireframe
+    const gridHelper = new THREE.GridHelper(16, 24, 0xa855f7, 0x1e153b)
+    gridHelper.position.y = -2.59
+    cabinetGroup.add(gridHelper)
+
+    // 6. Realistic Industrial Chassis Enclosure
+    // Outer Armor Shell (Dark Titanium Powder-Coat)
+    const chassisGeo = new THREE.BoxGeometry(8.0, 4.8, 3.6)
     const chassisMat = new THREE.MeshStandardMaterial({
-      color: 0x0f0724,
+      color: 0x13111c,
       metalness: 0.85,
-      roughness: 0.25,
-      wireframe: false,
+      roughness: 0.3,
     })
     const chassis = new THREE.Mesh(chassisGeo, chassisMat)
-    scene.add(chassis)
+    chassis.castShadow = true
+    chassis.receiveShadow = true
+    cabinetGroup.add(chassis)
 
-    // Neon edge highlight wireframe frame
+    // Beveled Edge Highlight Frame
     const edges = new THREE.EdgesGeometry(chassisGeo)
     const edgeLine = new THREE.LineSegments(
       edges,
-      new THREE.LineBasicMaterial({ color: 0x9333ea, transparent: true, opacity: 0.6 })
+      new THREE.LineBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.35 })
     )
-    scene.add(edgeLine)
+    cabinetGroup.add(edgeLine)
 
-    // 5. Drawers (2 Rows x 4 Cols)
+    // Left and Right 19" Server Rack Rails (Chromed Extrusions)
+    ;[-4.08, 4.08].forEach((xPos) => {
+      const railGeo = new THREE.BoxGeometry(0.18, 4.8, 0.4)
+      const railMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.95,
+        roughness: 0.15,
+      })
+      const rail = new THREE.Mesh(railGeo, railMat)
+      rail.position.set(xPos, 0, 1.7)
+      cabinetGroup.add(rail)
+
+      // Hex mounting screws down the rail
+      ;[-1.8, -0.9, 0, 0.9, 1.8].forEach((yPos) => {
+        const screwGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.05, 6)
+        const screwMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
+        const screw = new THREE.Mesh(screwGeo, screwMat)
+        screw.rotation.x = Math.PI / 2
+        screw.position.set(xPos, yPos, 1.91)
+        cabinetGroup.add(screw)
+      })
+    })
+
+    // Top Digital OLED Telemetry Banner
+    const oledGeo = new THREE.PlaneGeometry(7.4, 0.5)
+    const initialOledTex = createOledDisplayTexture(
+      telemetry.smoothed_temp || 24.2,
+      telemetry.smoothed_humidity || 44.8,
+      'NOMINAL'
+    )
+    const oledMat = new THREE.MeshBasicMaterial({
+      map: initialOledTex,
+      transparent: true,
+    })
+    const oledMesh = new THREE.Mesh(oledGeo, oledMat)
+    oledMesh.position.set(0, 2.15, 1.81)
+    cabinetGroup.add(oledMesh)
+    oledMeshRef.current = oledMesh
+
+    // 7. High-Fidelity Drawers (2 Rows × 4 Cols)
     const rows = ['A', 'B']
     const cols = [1, 2, 3, 4]
-    const drawerGeo = new THREE.BoxGeometry(1.6, 1.6, 2.8)
+    const drawerBodyGeo = new THREE.BoxGeometry(1.68, 1.72, 3.2)
+    const drawerInteriorGeo = new THREE.BoxGeometry(1.5, 1.4, 2.8)
 
     drawersMeshMap.current.clear()
+    drawerLedMats.current.clear()
 
     rows.forEach((row, rIdx) => {
       cols.forEach((col, cIdx) => {
         const slotKey = `${row}${col}`
-        const x = (cIdx - 1.5) * 1.8
-        const y = (1 - rIdx - 0.5) * 1.9
+        const slotData = INITIAL_SLOTS.find((s) => s.slotNumber === slotKey) || INITIAL_SLOTS[0]
+
+        // Group holding drawer body and all child meshes
+        const drawerGroup = new THREE.Group()
+        const x = (cIdx - 1.5) * 1.85
+        const y = (0.5 - rIdx) * 1.82 - 0.2
         const z = 0.2
 
-        const drawerMat = new THREE.MeshStandardMaterial({
-          color: 0x1d0a3d,
-          metalness: 0.7,
-          roughness: 0.35,
-        })
-        const drawerMesh = new THREE.Mesh(drawerGeo, drawerMat)
-        drawerMesh.position.set(x, y, z)
-        scene.add(drawerMesh)
+        drawerGroup.position.set(x, y, z)
+        drawerGroup.userData = { slotKey, slotId: `ROW-${slotKey}`, slotData }
 
-        // Add handle bar
-        const handleGeo = new THREE.BoxGeometry(0.8, 0.12, 0.1)
+        // Main Drawer Outer Casing
+        const faceTexture = createDrawerFaceTexture(slotData)
+        const drawerMaterials = [
+          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, metalness: 0.8, roughness: 0.35 }), // Right
+          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, metalness: 0.8, roughness: 0.35 }), // Left
+          new THREE.MeshStandardMaterial({ color: 0x181626, metalness: 0.8, roughness: 0.35 }), // Top
+          new THREE.MeshStandardMaterial({ color: 0x181626, metalness: 0.8, roughness: 0.35 }), // Bottom
+          new THREE.MeshStandardMaterial({
+            map: faceTexture,
+            metalness: 0.7,
+            roughness: 0.25,
+            bumpScale: 0.05,
+          }), // Front Face
+          new THREE.MeshStandardMaterial({ color: 0x0f0e17, metalness: 0.8, roughness: 0.4 }), // Back
+        ]
+
+        const drawerBox = new THREE.Mesh(drawerBodyGeo, drawerMaterials)
+        drawerBox.castShadow = true
+        drawerBox.receiveShadow = true
+        drawerBox.userData = { isClickable: true, slotKey, slotId: `ROW-${slotKey}` }
+        drawerGroup.add(drawerBox)
+
+        // Internal ESD Foam Tray (Revealed when pulled open)
+        const foamMat = new THREE.MeshStandardMaterial({
+          color: 0x09080e,
+          roughness: 0.95,
+          metalness: 0.05,
+        })
+        const foamTray = new THREE.Mesh(drawerInteriorGeo, foamMat)
+        foamTray.position.set(0, -0.1, -0.1)
+        drawerGroup.add(foamTray)
+
+        // 3D Electronic Components Inside Drawer Tray (Reels, IC chips)
+        const icGeo = new THREE.BoxGeometry(0.35, 0.08, 0.35)
+        const icMat = new THREE.MeshStandardMaterial({
+          color: 0x111827,
+          metalness: 0.9,
+          roughness: 0.2,
+        })
+        ;[-0.4, 0, 0.4].forEach((icX) => {
+          ;[-0.6, 0, 0.6].forEach((icZ) => {
+            const ic = new THREE.Mesh(icGeo, icMat)
+            ic.position.set(icX, 0.65, icZ)
+            drawerGroup.add(ic)
+
+            // Shiny central chip die
+            const dieGeo = new THREE.BoxGeometry(0.15, 0.09, 0.15)
+            const dieMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.95 })
+            const die = new THREE.Mesh(dieGeo, dieMat)
+            die.position.set(icX, 0.66, icZ)
+            drawerGroup.add(die)
+          })
+        })
+
+        // Heavy-Duty Extruded Chrome Drawer Handle
+        const handleBarGeo = new THREE.BoxGeometry(0.9, 0.14, 0.14)
         const handleMat = new THREE.MeshStandardMaterial({
-          color: 0xe879f9,
-          emissive: 0xa855f7,
-          emissiveIntensity: 0.5,
+          color: 0xf1f5f9,
+          metalness: 0.95,
+          roughness: 0.1,
         })
-        const handleMesh = new THREE.Mesh(handleGeo, handleMat)
-        handleMesh.position.set(0, 0, 1.45)
-        drawerMesh.add(handleMesh)
+        const handle = new THREE.Mesh(handleBarGeo, handleMat)
+        handle.position.set(0, -0.25, 1.68)
+        handle.castShadow = true
+        handle.userData = { isClickable: true, slotKey, slotId: `ROW-${slotKey}` }
+        drawerGroup.add(handle)
 
-        drawersMeshMap.current.set(slotKey, drawerMesh)
+        // Status Indicator LED Jewel (Top of drawer)
+        let ledColor = 0x10b981
+        if (slotData.status === 'APPROACHING_LIMIT') ledColor = 0xf59e0b
+        if (slotData.status === 'EXPIRED') ledColor = 0xf43f5e
+
+        const ledGeo = new THREE.BoxGeometry(0.3, 0.06, 0.08)
+        const ledMat = new THREE.MeshStandardMaterial({
+          color: ledColor,
+          emissive: ledColor,
+          emissiveIntensity: 0.8,
+          roughness: 0.2,
+        })
+        const ledMesh = new THREE.Mesh(ledGeo, ledMat)
+        ledMesh.position.set(0, 0.68, 1.62)
+        drawerGroup.add(ledMesh)
+        drawerLedMats.current.set(slotKey, ledMat)
+
+        // Point Light Illuminating Drawer Contents when Opened
+        const interiorSpot = new THREE.PointLight(0xfffbeb, 0, 2.5)
+        interiorSpot.position.set(0, 0.8, 0.5)
+        drawerGroup.add(interiorSpot)
+        drawerGroup.userData.interiorSpot = interiorSpot
+
+        cabinetGroup.add(drawerGroup)
+        drawersMeshMap.current.set(slotKey, drawerGroup)
       })
     })
 
-    // 6. Animation Loop
+    // 8. Interactive Raycasting & Drag Events
+    const getPointerPos = (e: MouseEvent | TouchEvent) => {
+      const rect = canvas.getBoundingClientRect()
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+      return {
+        x: ((clientX - rect.left) / rect.width) * 2 - 1,
+        y: -((clientY - rect.top) / rect.height) * 2 + 1,
+        clientX,
+        clientY,
+      }
+    }
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging.current = true
+      previousMousePosition.current = { x: e.clientX, y: e.clientY }
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      const pos = getPointerPos(e)
+      mouseCoords.current.set(pos.x, pos.y)
+
+      if (isDragging.current && cabinetGroupRef.current) {
+        const deltaX = e.clientX - previousMousePosition.current.x
+        const deltaY = e.clientY - previousMousePosition.current.y
+        cabinetGroupRef.current.rotation.y += deltaX * 0.008
+        cabinetGroupRef.current.rotation.x += deltaY * 0.008
+        // Clamp vertical tilt
+        cabinetGroupRef.current.rotation.x = Math.max(
+          -0.4,
+          Math.min(0.6, cabinetGroupRef.current.rotation.x)
+        )
+        previousMousePosition.current = { x: e.clientX, y: e.clientY }
+      }
+
+      // Hover Raycasting
+      if (cameraRef.current && sceneRef.current) {
+        raycaster.current.setFromCamera(mouseCoords.current, cameraRef.current)
+        const intersects = raycaster.current.intersectObjects(sceneRef.current.children, true)
+        const hitDrawer = intersects.find((hit) => hit.object.userData?.isClickable)
+        if (hitDrawer) {
+          canvas.style.cursor = 'pointer'
+          setHoveredSlotNumber(hitDrawer.object.userData.slotKey)
+        } else {
+          canvas.style.cursor = isDragging.current ? 'grabbing' : 'grab'
+          setHoveredSlotNumber(null)
+        }
+      }
+    }
+
+    const onMouseUp = (e: MouseEvent) => {
+      const delta =
+        Math.abs(e.clientX - previousMousePosition.current.x) +
+        Math.abs(e.clientY - previousMousePosition.current.y)
+      isDragging.current = false
+
+      // If clicked without significant drag, trigger drawer select
+      if (delta < 5 && cameraRef.current && sceneRef.current) {
+        const pos = getPointerPos(e)
+        mouseCoords.current.set(pos.x, pos.y)
+        raycaster.current.setFromCamera(mouseCoords.current, cameraRef.current)
+        const intersects = raycaster.current.intersectObjects(sceneRef.current.children, true)
+        const hitDrawer = intersects.find((hit) => hit.object.userData?.isClickable)
+        if (hitDrawer) {
+          const slotId = hitDrawer.object.userData.slotId
+          setSelectedSlotId(slotId)
+        }
+      }
+    }
+
+    canvas.addEventListener('mousedown', onMouseDown)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+
+    // 9. Animation Render Loop (Physics & Slide Lerp)
     let animId: number
+    const clock = new THREE.Clock()
+
     const animate = () => {
       animId = requestAnimationFrame(animate)
+      const elapsedTime = clock.getElapsedTime()
 
-      // Smooth camera interpolation towards target
+      // Turntable Auto-Rotation Mode
+      if (autoRotate && cabinetGroupRef.current && !isDragging.current) {
+        cabinetGroupRef.current.rotation.y += 0.005
+      }
+
+      // Smooth Camera Lerping toward target position
       if (cameraRef.current) {
         cameraRef.current.position.lerp(targetCameraPos.current, 0.05)
         cameraRef.current.lookAt(0, 0, 0)
       }
 
-      // Smooth drawer slide animation
-      drawersMeshMap.current.forEach((mesh, key) => {
+      // Physical Drawer Slide Animation & Interior Light
+      drawersMeshMap.current.forEach((group, key) => {
         const isSelected = selectedSlotId === `ROW-${key}` || selectedSlotId === key
-        const targetZ = isSelected ? 1.4 : 0.2
-        mesh.position.z += (targetZ - mesh.position.z) * 0.1
+        const targetZ = isSelected ? 1.6 : 0.2
+        group.position.z += (targetZ - group.position.z) * 0.12
+
+        // Toggle interior light when pulled open
+        const spot = group.userData.interiorSpot as THREE.PointLight | undefined
+        if (spot) {
+          spot.intensity = THREE.MathUtils.lerp(spot.intensity, isSelected ? 3.5 : 0, 0.1)
+        }
       })
+
+      // Pulsing LED Beacon on Located Slot
+      if (locatedSlotId) {
+        const key = locatedSlotId.replace('ROW-', '')
+        const mat = drawerLedMats.current.get(key)
+        if (mat) {
+          mat.emissive.setHex(0x06b6d4) // Bright Cyan beacon
+          mat.emissiveIntensity = 1.0 + Math.sin(elapsedTime * 8) * 0.8
+        }
+      }
 
       renderer.render(scene, camera)
     }
     animate()
 
-    // Resize handler
+    // Resize Handler
     const handleResize = () => {
       if (!container || !renderer || !camera) return
       const w = container.clientWidth
@@ -274,32 +678,40 @@ export function CabinetMatrix() {
 
     return () => {
       cancelAnimationFrame(animId)
+      canvas.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
       window.removeEventListener('resize', handleResize)
       renderer.dispose()
       chassisGeo.dispose()
-      drawerGeo.dispose()
+      drawerBodyGeo.dispose()
     }
-  }, [selectedSlotId])
+  }, [selectedSlotId, autoRotate, locatedSlotId, telemetry.smoothed_temp, telemetry.smoothed_humidity])
 
-  // Handle Perspective / Isometric View Toggle
+  // Camera presets
   const handleToggleView = () => {
     if (viewMode === 'Perspective') {
       setViewMode('Isometric')
-      // Angled isometric camera view
-      targetCameraPos.current.set(7.5, 6.0, 7.5)
+      targetCameraPos.current.set(7.2, 5.5, 7.8)
     } else {
       setViewMode('Perspective')
-      // Front perspective view
-      targetCameraPos.current.set(0, 1.5, 9.0)
+      targetCameraPos.current.set(0, 1.2, 8.8)
     }
   }
 
-  // Handle Slot Click
+  const handleResetCamera = () => {
+    if (cabinetGroupRef.current) {
+      cabinetGroupRef.current.rotation.x = 0.15
+      cabinetGroupRef.current.rotation.y = -0.45
+    }
+    targetCameraPos.current.set(7.2, 5.5, 7.8)
+    setViewMode('Isometric')
+  }
+
   const handleSlotClick = (slot: DrawerSlotInfo) => {
     setSelectedSlotId(slot.id)
   }
 
-  // Handle Slot Locator Trigger
   const handleLocateSlot = (slotId: string) => {
     setLocatedSlotId(slotId)
     setSlots((prev) =>
@@ -308,60 +720,107 @@ export function CabinetMatrix() {
         isLocated: s.id === slotId,
       }))
     )
+    // Focus camera on target drawer
+    setSelectedSlotId(slotId)
   }
 
   const selectedSlot = slots.find((s) => s.id === selectedSlotId) || null
+
+  const handleDispatchSlot = (slotId: string, amount: number) => {
+    setSlots((prev) =>
+      prev.map((s) => (s.id === slotId ? { ...s, quantity: Math.max(0, s.quantity - amount) } : s))
+    )
+  }
 
   return (
     <div
       data-testid="cabinet-matrix"
       ref={containerRef}
-      className="relative flex flex-col rounded-3xl border border-violet-400/20 bg-gradient-to-br from-[#120726]/90 via-[#0a0318]/90 to-[#180a32]/90 p-5 shadow-2xl backdrop-blur-xl"
+      className="relative flex flex-col rounded-3xl border border-violet-400/25 bg-gradient-to-br from-[#120726]/95 via-[#0a0318]/95 to-[#1a0a36]/95 p-5 shadow-2xl backdrop-blur-2xl"
     >
       {/* 3D Matrix Header Controls */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-fuchsia-500/15 text-fuchsia-400">
-            <Box className="size-4" />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-fuchsia-600 to-indigo-600 text-white shadow-lg shadow-fuchsia-600/30">
+            <Box className="size-5" />
           </div>
           <div>
-            <span className="font-mono text-xs font-bold tracking-wider text-white">
-              SMART CABINET 3D MATRIX (CAB-A)
-            </span>
-            <p className="text-[10px] font-mono text-violet-300/60">
-              PHYSICAL ENCLOSURE & SLOT TELEMETRY
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold tracking-wider text-white">
+                SMART CABINET 3D MATRIX (CAB-A)
+              </span>
+              <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+                PHOTOREALISTIC PBR
+              </span>
+            </div>
+            <p className="text-[11px] font-mono text-violet-300/70">
+              PHYSICAL ENCLOSURE & INTERACTIVE TELESCOPIC DRAWERS
             </p>
           </div>
         </div>
 
-        {/* 3D Perspective / Isometric Mode Toggle Button */}
-        <button
-          type="button"
-          data-testid="view-toggle"
-          onClick={handleToggleView}
-          className="flex items-center gap-2 rounded-xl border border-violet-700/50 bg-violet-950/60 px-3 py-1.5 font-mono text-xs font-bold text-violet-200 transition hover:border-violet-400 hover:bg-violet-900/60 hover:text-white active:scale-95 shadow-md"
-        >
-          <Layers className="size-3.5 text-fuchsia-400" />
-          <span>{viewMode === 'Perspective' ? 'Isometric View (3D)' : 'Perspective (3D)'}</span>
-        </button>
+        {/* Viewport Control Buttons */}
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <button
+            type="button"
+            data-testid="view-toggle"
+            onClick={handleToggleView}
+            className="flex items-center gap-1.5 rounded-xl border border-violet-700/60 bg-violet-950/70 px-3 py-1.5 font-bold text-violet-200 transition hover:border-violet-400 hover:bg-violet-900/60 hover:text-white active:scale-95 shadow-md"
+          >
+            <Layers className="size-3.5 text-fuchsia-400" />
+            <span>{viewMode === 'Perspective' ? 'Isometric (3D)' : 'Perspective (3D)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAutoRotate(!autoRotate)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-bold transition active:scale-95 shadow-md ${
+              autoRotate
+                ? 'border-fuchsia-500 bg-fuchsia-950/60 text-fuchsia-300'
+                : 'border-violet-700/60 bg-violet-950/70 text-violet-300 hover:text-white'
+            }`}
+          >
+            <Compass className="size-3.5 text-cyan-400" />
+            <span>{autoRotate ? 'Turntable: ON' : 'Turntable'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetCamera}
+            title="Reset Camera Orientation"
+            className="flex size-8 items-center justify-center rounded-xl border border-violet-700/60 bg-violet-950/70 text-violet-300 transition hover:bg-violet-900/60 hover:text-white"
+          >
+            <RotateCcw className="size-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* 3D WebGL Canvas Viewport */}
-      <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-violet-900/40 bg-[#070114]/90 shadow-inner">
+      <div className="relative h-80 w-full overflow-hidden rounded-2xl border border-violet-800/40 bg-radial from-[#150a2e] to-[#05020a] shadow-inner">
         <canvas
           ref={canvasRef}
           data-testid="cabinet-3d-view"
-          className="block h-full w-full"
+          className="block h-full w-full cursor-grab active:cursor-grabbing"
         />
 
-        {/* Overlay Badges */}
+        {/* HUD Info Badges */}
         <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 font-mono text-[10px]">
-          <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-950/40 px-2 py-0.5 text-fuchsia-300">
-            THREE.JS WEBGL RENDERER
+          <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-950/60 px-2 py-0.5 text-fuchsia-300 backdrop-blur-md">
+            PBR CHASSIS & NEMA-4X
           </span>
-          <span className="rounded-md border border-cyan-500/30 bg-cyan-950/40 px-2 py-0.5 text-cyan-300">
+          <span className="rounded-md border border-cyan-500/30 bg-cyan-950/60 px-2 py-0.5 text-cyan-300 backdrop-blur-md">
             CAMERA: {viewMode.toUpperCase()}
           </span>
+          {hoveredSlotNumber && (
+            <span className="rounded-md border border-amber-500/40 bg-amber-950/60 px-2 py-0.5 text-amber-300 animate-pulse backdrop-blur-md">
+              CLICK TO PULL DRAWER {hoveredSlotNumber}
+            </span>
+          )}
+        </div>
+
+        {/* Tactile Hint Overlay */}
+        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg border border-white/10 bg-black/50 px-2.5 py-1 font-mono text-[10px] text-zinc-400 backdrop-blur-md">
+          Drag to orbit 360° • Click any 3D drawer to open
         </div>
       </div>
 
@@ -398,53 +857,36 @@ export function CabinetMatrix() {
                 data-located={isLocated ? 'true' : 'false'}
                 onClick={() => handleSlotClick(slot)}
                 className={`cabinet-slot group relative flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all duration-200 outline-none ${statusClass} ${
-                  isSelected ? 'ring-2 ring-fuchsia-400 ring-offset-2 ring-offset-[#120726]' : ''
-                } ${
-                  isLocated
-                    ? 'animate-pulse glow-active ring-emerald-400 ring-2 shadow-[0_0_20px_rgba(16,185,129,0.7)]'
-                    : 'bg-[#15062c]/80 hover:bg-[#1f0940]'
+                  isSelected
+                    ? 'ring-2 ring-fuchsia-400 bg-fuchsia-950/40 -translate-y-1 shadow-lg shadow-fuchsia-500/20'
+                    : 'bg-zinc-950/60 hover:bg-zinc-900/60 hover:-translate-y-0.5'
                 }`}
               >
-                {/* Slot Top Header */}
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-white group-hover:text-fuchsia-300">
-                    SLOT {slot.slotNumber}
-                  </span>
+                  <span className="font-mono text-xs font-black text-white">{slot.slotNumber}</span>
                   <span
-                    className={`size-2 rounded-full ${
+                    className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-bold border ${
                       isExpired
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                        ? 'border-rose-500/50 bg-rose-500/20 text-rose-300'
                         : isWarning
-                        ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                        : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
+                        ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
+                        : 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
                     }`}
-                  />
-                </div>
-
-                {/* Component Info */}
-                <div className="my-2 flex flex-col font-mono">
-                  <span className="truncate text-xs font-bold text-purple-100">
-                    {slot.partNumber}
-                  </span>
-                  <span className="text-[10px] text-purple-300/60">
-                    {slot.batchId} · {slot.quantity} pcs
-                  </span>
-                </div>
-
-                {/* Telemetry Reading Displayed on Slot */}
-                <div className="flex items-center justify-between border-t border-violet-900/40 pt-2 font-mono text-[10px]">
-                  <span className="text-purple-300/70">{slot.temperature}</span>
-                  <span
-                    className={
-                      isExpired
-                        ? 'text-rose-400 font-bold'
-                        : isWarning
-                        ? 'text-amber-300'
-                        : 'text-emerald-300'
-                    }
                   >
-                    {slot.remaining}
+                    {slot.status}
                   </span>
+                </div>
+
+                <div className="my-2">
+                  <p className="truncate font-mono text-xs font-bold text-white">{slot.partNumber}</p>
+                  <p className="font-mono text-[10px] text-zinc-400">
+                    {slot.quantity} units • {slot.remaining}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[10px] text-zinc-500">
+                  <span>{slot.temperature}</span>
+                  <span>{slot.humidity}</span>
                 </div>
               </button>
             )
@@ -452,13 +894,14 @@ export function CabinetMatrix() {
         </div>
       </div>
 
-      {/* Pull-Out Drawer Inspection Modal/Card */}
+      {/* Drawer Inspection Modal (Renders when a drawer is selected) */}
       {selectedSlot && (
         <div className="mt-5">
           <DrawerInspection
             slot={selectedSlot}
             onClose={() => setSelectedSlotId(null)}
             onLocate={handleLocateSlot}
+            onDispatch={handleDispatchSlot}
           />
         </div>
       )}

@@ -22,9 +22,10 @@ interface DrawerInspectionProps {
   slot: DrawerSlotInfo | null
   onClose: () => void
   onLocate: (slotId: string) => void
+  onDispatch?: (slotId: string, amount: number) => void
 }
 
-export function DrawerInspection({ slot, onClose, onLocate }: DrawerInspectionProps) {
+export function DrawerInspection({ slot, onClose, onLocate, onDispatch }: DrawerInspectionProps) {
   if (!slot) return null
 
   const isAlert = slot.status === 'EXPIRED'
@@ -127,28 +128,41 @@ export function DrawerInspection({ slot, onClose, onLocate }: DrawerInspectionPr
         </div>
 
         {/* Actions Bar */}
-        <div className="mt-2 flex items-center justify-end gap-3 border-t border-violet-900/40 pt-4 font-mono text-xs">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-violet-900/40 pt-4 font-mono text-xs">
           <button
             type="button"
-            data-testid="locate-slot"
-            onClick={() => onLocate(slot.id)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-bold transition active:scale-95 ${
-              slot.isLocated
-                ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] animate-pulse'
-                : 'border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50'
-            }`}
+            data-testid="dispatch-slot"
+            onClick={() => onDispatch ? onDispatch(slot.id, 5) : null}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2.5 font-bold text-white shadow-lg shadow-fuchsia-600/30 transition hover:from-fuchsia-500 hover:to-indigo-500 active:scale-95"
           >
-            <MapPin className="size-3.5" />
-            <span>{slot.isLocated ? 'Slot Located' : 'Locate'}</span>
+            <Zap className="size-3.5" />
+            <span>Issue FEFO Pick (-5 units)</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-violet-800/50 bg-violet-950/40 px-4 py-2.5 font-bold text-violet-200 transition hover:bg-violet-900/60 hover:text-white"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="locate-slot"
+              onClick={() => onLocate(slot.id)}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 font-bold transition active:scale-95 ${
+                slot.isLocated
+                  ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] animate-pulse'
+                  : 'border border-emerald-500/50 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50'
+              }`}
+            >
+              <MapPin className="size-3.5" />
+              <span>{slot.isLocated ? 'Beacon Active' : 'Locate LED'}</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="close-drawer"
+              onClick={onClose}
+              className="rounded-xl border border-violet-800/50 bg-violet-950/40 px-4 py-2.5 font-bold text-violet-200 transition hover:bg-violet-900/60 hover:text-white"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
