@@ -32,6 +32,8 @@ function getExpiryStatus(expiryDate?: string) {
   return 'safe'
 }
 
+import { API_BASE_URL } from '@/lib/api'
+
 export default function ExpiryPage() {
   const [componentsList, setComponentsList] = useState<Component[]>(fallbackComponents)
   const [loading, setLoading] = useState<boolean>(true)
@@ -41,7 +43,7 @@ export default function ExpiryPage() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
-      const response = await fetch('http://localhost:8000/inventory', {
+      const response = await fetch(`${API_BASE_URL}/inventory`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

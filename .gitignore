@@ -23,6 +23,12 @@ __v0_jsx-dev-runtime.ts
 # Environment variables
 .env*.local
 
+# Test & Report artifacts
+playwright-report/
+test-results/
+tsconfig.tsbuildinfo
+.agents/
+
 # Common ignores
 node_modules
 .next/

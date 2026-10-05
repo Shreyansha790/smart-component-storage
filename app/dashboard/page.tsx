@@ -17,6 +17,7 @@ import { CabinetMatrix } from '@/components/cabinet-3d'
 import { WaveformCanvas } from '@/components/waveform-canvas'
 import { ActuatorPanel } from '@/components/actuator-panel'
 import { ArrheniusWidget } from '@/components/arrhenius-widget'
+import { API_BASE_URL } from '@/lib/api'
 import type { Component } from '@/types'
 
 export default function DashboardPage() {
@@ -33,7 +34,7 @@ export default function DashboardPage() {
           return
         }
 
-        const response = await fetch('http://localhost:8000/inventory', {
+        const response = await fetch(`${API_BASE_URL}/inventory`, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,

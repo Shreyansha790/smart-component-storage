@@ -1,6 +1,16 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { API_BASE_URL } from '@/lib/api'
+
+export function getWsUrl(): string {
+  if (process.env.NEXT_PUBLIC_WS_BASE_URL) {
+    return `${process.env.NEXT_PUBLIC_WS_BASE_URL}/ws/telemetry`
+  }
+  // Convert API_BASE_URL (http -> ws, https -> wss)
+  const base = API_BASE_URL.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://')
+  return `${base}/ws/telemetry`
+}
 
 export interface ActuatorCommands {
   peltier_active: boolean
@@ -104,7 +114,7 @@ export function useTelemetryWs(cabinetLocation: string = 'CAB-A') {
       if (typeof window === 'undefined') return
 
       try {
-        const wsUrl = `ws://localhost:8000/ws/telemetry`
+        const wsUrl = getWsUrl()
         const ws = new WebSocket(wsUrl)
         wsRef.current = ws
 
@@ -171,7 +181,7 @@ export function useTelemetryWs(cabinetLocation: string = 'CAB-A') {
 
       // Send to backend if available
       try {
-        await fetch(`http://localhost:8000/cabinet/${cabinetLocation}/actuators`, {
+        await fetch(`${API_BASE_URL}/cabinet/${cabinetLocation}/actuators`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

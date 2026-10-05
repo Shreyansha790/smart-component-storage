@@ -7,6 +7,7 @@ import { Settings, LogOut } from 'lucide-react'
 import { systemInfo } from '@/data/mock-data'
 import { ScreenHeader } from '@/components/app-shell'
 import { ToggleSwitch } from '@/components/toggle-switch'
+import { API_BASE_URL } from '@/lib/api'
 
 interface UserData {
   full_name?: string
@@ -32,7 +33,7 @@ export default function ProfilePage() {
       return
     }
 
-    fetch('http://localhost:8000/auth/me', {
+    fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
