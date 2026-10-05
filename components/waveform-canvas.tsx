@@ -180,32 +180,32 @@ export function WaveformCanvas({ cabinetLocation = 'CAB-A' }: WaveformCanvasProp
   }, [activeChannel])
 
   return (
-    <div className="relative flex flex-col rounded-3xl border border-violet-400/20 bg-gradient-to-br from-[#120726]/90 via-[#0a0318]/90 to-[#180a32]/90 p-5 shadow-2xl backdrop-blur-xl">
+    <div className="relative flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl">
       {/* Waveform Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-fuchsia-500/10 text-fuchsia-400">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
             <Activity className="size-4 animate-pulse" />
           </div>
           <div>
-            <span className="font-mono text-xs font-bold tracking-wider text-white">
+            <span className="font-mono text-xs font-bold tracking-wider text-slate-900">
               ENVIRONMENTAL OSCILLOSCOPE
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-violet-300/60">60 FPS BUFFER</span>
-              <span className="size-1 rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-mono text-emerald-400">REAL-TIME</span>
+              <span className="text-[10px] font-mono text-slate-400">60 FPS BUFFER</span>
+              <span className="size-1 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-mono text-emerald-600 font-semibold">REAL-TIME</span>
             </div>
           </div>
         </div>
 
         {/* Channel selector buttons */}
-        <div className="flex items-center gap-1 rounded-xl border border-violet-800/40 bg-violet-950/40 p-1 text-[11px] font-mono">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 text-[11px] font-mono">
           <button
             type="button"
             onClick={() => setActiveChannel('both')}
-            className={`rounded-lg px-2.5 py-1 transition ${
-              activeChannel === 'both' ? 'bg-fuchsia-600/80 text-white shadow' : 'text-purple-300/60 hover:text-white'
+            className={`rounded-lg px-2.5 py-1 transition font-medium ${
+              activeChannel === 'both' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             DUAL
@@ -213,8 +213,8 @@ export function WaveformCanvas({ cabinetLocation = 'CAB-A' }: WaveformCanvasProp
           <button
             type="button"
             onClick={() => setActiveChannel('temp')}
-            className={`rounded-lg px-2 py-1 transition ${
-              activeChannel === 'temp' ? 'bg-fuchsia-600/80 text-white shadow' : 'text-purple-300/60 hover:text-white'
+            className={`rounded-lg px-2.5 py-1 transition font-medium ${
+              activeChannel === 'temp' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             TEMP
@@ -222,8 +222,8 @@ export function WaveformCanvas({ cabinetLocation = 'CAB-A' }: WaveformCanvasProp
           <button
             type="button"
             onClick={() => setActiveChannel('hum')}
-            className={`rounded-lg px-2 py-1 transition ${
-              activeChannel === 'hum' ? 'bg-cyan-600/80 text-white shadow' : 'text-purple-300/60 hover:text-white'
+            className={`rounded-lg px-2.5 py-1 transition font-medium ${
+              activeChannel === 'hum' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             HUM

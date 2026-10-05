@@ -101,12 +101,12 @@ export default function DashboardPage() {
       {/* Dashboard Top Greeting Header */}
       <header className="mb-6 flex items-start justify-between">
         <div>
-          <p className="font-mono text-xs tracking-[0.2em] text-violet-300/70">
+          <p className="font-mono text-xs tracking-[0.2em] text-slate-500 font-semibold">
             CYBER PHYSICAL TELEMETRY NODE
           </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white font-mono">
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 font-mono">
             Welcome back,{' '}
-            <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
               {userProfile.name.split(' ')[0]}
             </span>
           </h1>
@@ -114,11 +114,11 @@ export default function DashboardPage() {
 
         <Link
           href="/alerts"
-          className="relative flex size-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-950/40 text-violet-100 shadow-[0_0_20px_rgba(139,92,246,0.15)] backdrop-blur-xl transition hover:bg-violet-900/40"
+          className="relative flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm backdrop-blur-xl transition hover:bg-slate-50"
         >
-          <Bell className="size-5 text-fuchsia-400" />
+          <Bell className="size-5 text-sky-600" />
           {unreadAlerts > 0 && (
-            <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-[10px] font-bold text-white shadow-[0_0_15px_rgba(217,70,239,0.7)]">
+            <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm">
               {unreadAlerts}
             </span>
           )}
@@ -127,29 +127,29 @@ export default function DashboardPage() {
 
       {/* Primary Telemetry Metrics Row */}
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/15 to-purple-500/5 p-4 backdrop-blur-xl">
-          <p className="font-mono text-xs text-purple-200/60">Total Tracked Components</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-fuchsia-300">
-            {loading ? '...' : totalParts} <span className="text-sm font-normal text-purple-300">pcs</span>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm backdrop-blur-xl">
+          <p className="font-mono text-xs text-slate-500 font-medium">Total Tracked Components</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-slate-900">
+            {loading ? '...' : totalParts} <span className="text-sm font-normal text-slate-500">pcs</span>
           </p>
         </div>
 
-        <div className="rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 to-purple-500/5 p-4 backdrop-blur-xl">
-          <p className="font-mono text-xs text-purple-200/60">Connected Cabinets</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-violet-300">
-            {fallbackCabinets.length} <span className="text-sm font-normal text-purple-300">online</span>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm backdrop-blur-xl">
+          <p className="font-mono text-xs text-slate-500 font-medium">Connected Cabinets</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-sky-600">
+            {fallbackCabinets.length} <span className="text-sm font-normal text-slate-500">online</span>
           </p>
         </div>
 
-        <div className="rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/15 to-fuchsia-500/5 p-4 backdrop-blur-xl">
-          <p className="font-mono text-xs text-purple-200/60">Environmental Alerts</p>
-          <p className="mt-2 font-mono text-2xl font-bold text-purple-300">
-            {unreadAlerts} <span className="text-sm font-normal text-purple-300">active</span>
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm backdrop-blur-xl">
+          <p className="font-mono text-xs text-slate-500 font-medium">Environmental Alerts</p>
+          <p className="mt-2 font-mono text-2xl font-bold text-amber-600">
+            {unreadAlerts} <span className="text-sm font-normal text-slate-500">active</span>
           </p>
         </div>
       </section>
 
-      {/* Circular Glowing Environmental HUD Dials */}
+      {/* Circular Environmental HUD Dials */}
       <section className="mb-6">
         <HudDial cabinetLocation="CAB-A" />
       </section>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
       {/* Priority Alerts and Inventory Summary */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-3xl border border-violet-400/20 bg-[#120726]/80 p-5 shadow-2xl backdrop-blur-xl">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl">
           <SectionHeader
             title="Priority Alerts"
             actionLabel="See all"
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             {priorityAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className="rounded-2xl border border-fuchsia-400/10 bg-violet-950/30 backdrop-blur-xl p-1"
+                className="rounded-2xl border border-slate-100 bg-slate-50/70 p-1"
               >
                 <AlertItem alert={alert} />
               </div>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-violet-400/20 bg-[#120726]/80 p-5 shadow-2xl backdrop-blur-xl">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl">
           <SectionHeader
             title="Recent Components"
             actionLabel="View all"
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             {recentComponents.map((component) => (
               <div
                 key={component.id}
-                className="overflow-hidden rounded-2xl border border-violet-400/10 bg-violet-950/30 backdrop-blur-xl p-1"
+                className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/70 p-1"
               >
                 <ComponentCard component={component} />
               </div>

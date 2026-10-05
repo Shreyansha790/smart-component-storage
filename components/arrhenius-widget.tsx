@@ -55,52 +55,52 @@ export function ArrheniusWidget() {
   const [selectedItem, setSelectedItem] = useState<FefoItem>(DEFAULT_FEFO_ITEMS[0])
 
   return (
-    <div className="relative flex flex-col rounded-3xl border border-violet-400/20 bg-gradient-to-br from-[#120726]/90 via-[#0a0318]/90 to-[#180a32]/90 p-5 shadow-2xl backdrop-blur-xl">
+    <div className="relative flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl">
       {/* Widget Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
             <Flame className="size-4" />
           </div>
           <div>
-            <span className="font-mono text-xs font-bold tracking-wider text-white">
+            <span className="font-mono text-xs font-bold tracking-wider text-slate-900">
               ARRHENIUS DYNAMIC FEFO ENGINE
             </span>
-            <p className="text-[10px] font-mono text-violet-300/60">
+            <p className="text-[10px] font-mono text-slate-400">
               PHYSICS-INFORMED KINETIC DEGRADATION (Ea = 0.6 eV)
             </p>
           </div>
         </div>
 
-        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-300">
+        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700">
           AF = {selectedItem.accelFactor.toFixed(2)}x
         </span>
       </div>
 
       {/* Degradation Metrics Banner */}
-      <div className="grid grid-cols-3 gap-2.5 rounded-2xl border border-violet-900/40 bg-[#0e0320]/80 p-3.5">
+      <div className="grid grid-cols-3 gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5">
         <div className="flex flex-col">
-          <span className="text-[10px] font-mono text-purple-300/70">Acceleration Factor</span>
-          <span className="mt-1 font-mono text-xl font-bold text-amber-300">
+          <span className="text-[10px] font-mono text-slate-500">Acceleration Factor</span>
+          <span className="mt-1 font-mono text-xl font-bold text-amber-600">
             {selectedItem.accelFactor.toFixed(2)}×
           </span>
-          <span className="text-[9px] font-mono text-purple-400/50">Arrhenius Rate</span>
+          <span className="text-[9px] font-mono text-slate-400">Arrhenius Rate</span>
         </div>
 
-        <div className="flex flex-col border-x border-violet-900/40 px-3">
-          <span className="text-[10px] font-mono text-purple-300/70">Cumulative Stress</span>
-          <span className="mt-1 font-mono text-xl font-bold text-fuchsia-300">
+        <div className="flex flex-col border-x border-slate-200 px-3">
+          <span className="text-[10px] font-mono text-slate-500">Cumulative Stress</span>
+          <span className="mt-1 font-mono text-xl font-bold text-indigo-600">
             {selectedItem.stressHours.toFixed(1)} hrs
           </span>
-          <span className="text-[9px] font-mono text-purple-400/50">Thermal Excursion</span>
+          <span className="text-[9px] font-mono text-slate-400">Thermal Excursion</span>
         </div>
 
         <div className="flex flex-col pl-1">
-          <span className="text-[10px] font-mono text-purple-300/70">Adjusted Remaining</span>
-          <span className="mt-1 font-mono text-xl font-bold text-emerald-300">
+          <span className="text-[10px] font-mono text-slate-500">Adjusted Remaining</span>
+          <span className="mt-1 font-mono text-xl font-bold text-emerald-600">
             {selectedItem.effectiveDaysRemaining} d
           </span>
-          <span className="text-[9px] font-mono text-purple-400/50">
+          <span className="text-[9px] font-mono text-slate-400">
             Nominal: {selectedItem.nominalDays}d
           </span>
         </div>
@@ -108,9 +108,9 @@ export function ArrheniusWidget() {
 
       {/* Dynamic FEFO Queue List */}
       <div className="mt-4 flex flex-col gap-2">
-        <div className="flex items-center justify-between text-[11px] font-mono text-purple-300/70">
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
           <span>PRIORITIZED FEFO DISPATCH QUEUE</span>
-          <span className="text-[10px] text-purple-400/50">STRESS-WEIGHTED</span>
+          <span className="text-[10px] text-slate-400">STRESS-WEIGHTED</span>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -125,23 +125,23 @@ export function ArrheniusWidget() {
                 onClick={() => setSelectedItem(item)}
                 className={`flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition ${
                   isSelected
-                    ? 'border-purple-400/60 bg-purple-950/40 ring-1 ring-purple-400/40'
-                    : 'border-violet-900/30 bg-[#14062a]/40 hover:bg-[#1a0836]/60'
+                    ? 'border-sky-300 bg-sky-50/80 ring-1 ring-sky-300 shadow-sm'
+                    : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100/70'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`size-2 rounded-full ${
                       isAlert
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                        ? 'bg-rose-500 shadow-sm'
                         : isWarning
-                        ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                        : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
+                        ? 'bg-amber-500 shadow-sm'
+                        : 'bg-emerald-500 shadow-sm'
                     }`}
                   />
                   <div>
-                    <p className="font-mono text-xs font-bold text-white">{item.name}</p>
-                    <p className="text-[10px] font-mono text-purple-300/60">
+                    <p className="font-mono text-xs font-bold text-slate-900">{item.name}</p>
+                    <p className="text-[10px] font-mono text-slate-500">
                       Batch: {item.batch} · Degradation: {(item.degradationScore * 100).toFixed(0)}%
                     </p>
                   </div>
@@ -151,15 +151,15 @@ export function ArrheniusWidget() {
                   <span
                     className={`text-xs font-bold ${
                       isAlert
-                        ? 'text-rose-400'
+                        ? 'text-rose-600'
                         : isWarning
-                        ? 'text-amber-300'
-                        : 'text-emerald-300'
+                        ? 'text-amber-600'
+                        : 'text-emerald-600'
                     }`}
                   >
                     {item.effectiveDaysRemaining} days
                   </span>
-                  <p className="text-[9px] text-purple-400/50">{item.status}</p>
+                  <p className="text-[9px] text-slate-400 font-medium">{item.status}</p>
                 </div>
               </div>
             )

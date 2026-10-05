@@ -33,14 +33,14 @@ export function HudDial({ cabinetLocation = 'CAB-A' }: HudDialProps) {
       {/* 1. Thermal Dial */}
       <div
         data-testid="temp-reading"
-        className="temperature-dial relative flex items-center justify-between overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-900/30 via-[#120524]/80 to-[#1e0a3d]/80 p-5 shadow-2xl backdrop-blur-xl"
+        className="temperature-dial relative flex items-center justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl"
       >
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
               <Thermometer className="size-4" />
             </span>
-            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-purple-200/70">
+            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
               Internal Temp
             </span>
           </div>
@@ -48,16 +48,16 @@ export function HudDial({ cabinetLocation = 'CAB-A' }: HudDialProps) {
           <div className="mt-3 flex items-baseline gap-1">
             <span
               data-testid="telemetry-temp"
-              className="temp-val font-mono text-3xl font-extrabold tracking-tight text-white"
+              className="temp-val font-mono text-3xl font-extrabold tracking-tight text-slate-900"
             >
               {temp.toFixed(1)}
             </span>
-            <span className="font-mono text-sm font-semibold text-violet-300">°C</span>
+            <span className="font-mono text-sm font-semibold text-slate-500">°C</span>
           </div>
 
           <div className="mt-2 flex items-center gap-1.5 font-mono text-[11px]">
             {isTempHigh ? (
-              <span className="flex items-center gap-1 text-amber-400">
+              <span className="flex items-center gap-1 text-amber-600">
                 <AlertTriangle className="size-3" /> Excursion Alert
               </span>
             ) : (
@@ -112,35 +112,35 @@ export function HudDial({ cabinetLocation = 'CAB-A' }: HudDialProps) {
       </div>
 
       {/* 2. Relative Humidity Dial */}
-      <div className="relative flex items-center justify-between overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-950/30 via-[#06152a]/80 to-[#0e274a]/80 p-5 shadow-2xl backdrop-blur-xl">
+      <div className="relative flex items-center justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-xl">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-300">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
               <Droplets className="size-4" />
             </span>
-            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-cyan-200/70">
+            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
               Humidity (RH)
             </span>
           </div>
 
           <div className="mt-3 flex items-baseline gap-1">
-            <span className="font-mono text-3xl font-extrabold tracking-tight text-white">
+            <span className="font-mono text-3xl font-extrabold tracking-tight text-slate-900">
               {humidity.toFixed(1)}
             </span>
-            <span className="font-mono text-sm font-semibold text-cyan-300">%RH</span>
+            <span className="font-mono text-sm font-semibold text-slate-500">%RH</span>
           </div>
 
           <div className="mt-2 flex items-center gap-1.5 font-mono text-[11px]">
             {isHumHigh ? (
-              <span className="flex items-center gap-1 text-amber-400">
+              <span className="flex items-center gap-1 text-amber-600">
                 <AlertTriangle className="size-3" /> High Moisture
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-emerald-400">
+              <span className="flex items-center gap-1 text-emerald-600">
                 <ShieldCheck className="size-3" /> Dry Chamber
               </span>
             )}
-            <span className="text-cyan-400/50">· Desiccant OK</span>
+            <span className="text-slate-400">· Desiccant OK</span>
           </div>
         </div>
 

@@ -141,16 +141,16 @@ function createDrawerFaceTexture(slot: DrawerSlotInfo) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return new THREE.CanvasTexture(canvas)
 
-  // Brushed Titanium Faceplate Background
+  // Brushed Surgical Silver/White Faceplate Background
   const grad = ctx.createLinearGradient(0, 0, 512, 512)
-  grad.addColorStop(0, '#1c1b29')
-  grad.addColorStop(0.5, '#151421')
-  grad.addColorStop(1, '#0e0d17')
+  grad.addColorStop(0, '#f8fafc')
+  grad.addColorStop(0.5, '#e2e8f0')
+  grad.addColorStop(1, '#cbd5e1')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, 512, 512)
 
   // Subtle brushed metallic horizontal micro-lines
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)'
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)'
   ctx.lineWidth = 1
   for (let y = 0; y < 512; y += 4) {
     ctx.beginPath()
@@ -160,40 +160,40 @@ function createDrawerFaceTexture(slot: DrawerSlotInfo) {
   }
 
   // Inner beveled chamfer border
-  ctx.strokeStyle = 'rgba(168, 85, 247, 0.25)'
+  ctx.strokeStyle = 'rgba(2, 132, 199, 0.4)'
   ctx.lineWidth = 8
   ctx.strokeRect(16, 16, 480, 480)
 
   // Corner reinforcement rivets
-  ctx.fillStyle = '#64748b'
+  ctx.fillStyle = '#94a3b8'
   ;[[32, 32], [480, 32], [32, 480], [480, 480]].forEach(([cx, cy]) => {
     ctx.beginPath()
     ctx.arc(cx, cy, 6, 0, Math.PI * 2)
     ctx.fill()
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'
     ctx.lineWidth = 2
     ctx.stroke()
   })
 
   // Slot Identifier Badge (e.g. "A1")
-  ctx.fillStyle = '#f8fafc'
+  ctx.fillStyle = '#0f172a'
   ctx.font = 'bold 84px "JetBrains Mono", monospace'
   ctx.fillText(slot.slotNumber, 48, 120)
 
   // Secondary sub-header
-  ctx.fillStyle = 'rgba(192, 132, 252, 0.8)'
-  ctx.font = '600 24px "Plus Jakarta Sans", sans-serif'
+  ctx.fillStyle = '#0284c7'
+  ctx.font = '700 24px "Plus Jakarta Sans", sans-serif'
   ctx.fillText('BAY LOCATOR', 48, 158)
 
   // Component Part Number (truncated if needed)
-  ctx.fillStyle = '#e2e8f0'
+  ctx.fillStyle = '#0f172a'
   ctx.font = 'bold 30px "JetBrains Mono", monospace'
   const partText = slot.partNumber.length > 22 ? slot.partNumber.slice(0, 20) + '...' : slot.partNumber
   ctx.fillText(partText, 48, 380)
 
   // Stock quantity & batch pill
-  ctx.fillStyle = 'rgba(148, 163, 184, 0.8)'
-  ctx.font = '500 24px "JetBrains Mono", monospace'
+  ctx.fillStyle = '#475569'
+  ctx.font = '600 24px "JetBrains Mono", monospace'
   ctx.fillText(`QTY: ${slot.quantity} PCS | ${slot.batchId}`, 48, 420)
 
   // Bottom Status Indicator Bar
@@ -313,12 +313,12 @@ export function CabinetMatrix() {
     renderer.toneMappingExposure = 1.2
     rendererRef.current = renderer
 
-    // 3. Multi-Point Studio Lighting (Hyper-Realistic Industrial Rig)
-    const ambientLight = new THREE.AmbientLight(0x2e1065, 1.2) // Deep violet ambient
+    // 3. Multi-Point Studio Lighting (Hyper-Realistic Cleanroom Industrial Rig)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6) // Crisp white laboratory ambient
     scene.add(ambientLight)
 
     // Key Light (Warm Sunlight Angle casting soft shadows)
-    const keyLight = new THREE.DirectionalLight(0xfff1f2, 2.2)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0)
     keyLight.position.set(8, 12, 9)
     keyLight.castShadow = true
     keyLight.shadow.mapSize.width = 1024
@@ -328,18 +328,18 @@ export function CabinetMatrix() {
     keyLight.shadow.bias = -0.0005
     scene.add(keyLight)
 
-    // Cool Cyan Rim Light (Sharp edge highlights)
-    const rimLight = new THREE.DirectionalLight(0x06b6d4, 1.8)
+    // Cool Sky Fill Light (Sharp cleanroom edge highlights)
+    const rimLight = new THREE.DirectionalLight(0x0284c7, 1.2)
     rimLight.position.set(-9, 4, -6)
     scene.add(rimLight)
 
-    // Under-Glow Neon Accent Light
-    const floorGlow = new THREE.PointLight(0xa855f7, 2.5, 15)
+    // Subtle Ground Ambient Bounce Light
+    const floorGlow = new THREE.PointLight(0x38bdf8, 1.2, 15)
     floorGlow.position.set(0, -3.5, 2)
     scene.add(floorGlow)
 
     // Overhead White Inspection Light
-    const topLight = new THREE.SpotLight(0xffffff, 2.0, 20, Math.PI / 4, 0.3)
+    const topLight = new THREE.SpotLight(0xffffff, 2.2, 20, Math.PI / 4, 0.3)
     topLight.position.set(0, 7, 3)
     scene.add(topLight)
 
@@ -353,9 +353,9 @@ export function CabinetMatrix() {
     // 5. Floor Shadow Plane & Circular Ground Contact
     const groundGeo = new THREE.PlaneGeometry(24, 24)
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x05020a,
+      color: 0xe2e8f0,
       roughness: 0.9,
-      metalness: 0.1,
+      metalness: 0.05,
     })
     const groundMesh = new THREE.Mesh(groundGeo, groundMat)
     groundMesh.rotation.x = -Math.PI / 2
@@ -363,18 +363,18 @@ export function CabinetMatrix() {
     groundMesh.receiveShadow = true
     cabinetGroup.add(groundMesh)
 
-    // Ground Grid Wireframe
-    const gridHelper = new THREE.GridHelper(16, 24, 0xa855f7, 0x1e153b)
+    // Ground Grid Wireframe (Cleanroom precision grid)
+    const gridHelper = new THREE.GridHelper(16, 24, 0x0284c7, 0xcbd5e1)
     gridHelper.position.y = -2.59
     cabinetGroup.add(gridHelper)
 
     // 6. Realistic Industrial Chassis Enclosure
-    // Outer Armor Shell (Dark Titanium Powder-Coat)
+    // Outer Armor Shell (Surgical Powder-Coated Cleanroom Enclosure)
     const chassisGeo = new THREE.BoxGeometry(8.0, 4.8, 3.6)
     const chassisMat = new THREE.MeshStandardMaterial({
-      color: 0x13111c,
-      metalness: 0.85,
-      roughness: 0.3,
+      color: 0x334155, // Clean Slate Armor Enclosure
+      metalness: 0.75,
+      roughness: 0.25,
     })
     const chassis = new THREE.Mesh(chassisGeo, chassisMat)
     chassis.castShadow = true
@@ -385,7 +385,7 @@ export function CabinetMatrix() {
     const edges = new THREE.EdgesGeometry(chassisGeo)
     const edgeLine = new THREE.LineSegments(
       edges,
-      new THREE.LineBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.35 })
+      new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 })
     )
     cabinetGroup.add(edgeLine)
 
@@ -454,17 +454,17 @@ export function CabinetMatrix() {
         // Main Drawer Outer Casing
         const faceTexture = createDrawerFaceTexture(slotData)
         const drawerMaterials = [
-          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, metalness: 0.8, roughness: 0.35 }), // Right
-          new THREE.MeshStandardMaterial({ color: 0x1e1b2e, metalness: 0.8, roughness: 0.35 }), // Left
-          new THREE.MeshStandardMaterial({ color: 0x181626, metalness: 0.8, roughness: 0.35 }), // Top
-          new THREE.MeshStandardMaterial({ color: 0x181626, metalness: 0.8, roughness: 0.35 }), // Bottom
+          new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 }), // Right
+          new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 }), // Left
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }), // Top
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }), // Bottom
           new THREE.MeshStandardMaterial({
             map: faceTexture,
-            metalness: 0.7,
+            metalness: 0.6,
             roughness: 0.25,
             bumpScale: 0.05,
           }), // Front Face
-          new THREE.MeshStandardMaterial({ color: 0x0f0e17, metalness: 0.8, roughness: 0.4 }), // Back
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.4 }), // Back
         ]
 
         const drawerBox = new THREE.Mesh(drawerBodyGeo, drawerMaterials)
@@ -736,24 +736,24 @@ export function CabinetMatrix() {
     <div
       data-testid="cabinet-matrix"
       ref={containerRef}
-      className="relative flex flex-col rounded-3xl border border-violet-400/25 bg-gradient-to-br from-[#120726]/95 via-[#0a0318]/95 to-[#1a0a36]/95 p-5 shadow-2xl backdrop-blur-2xl"
+      className="relative flex flex-col rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm backdrop-blur-2xl"
     >
       {/* 3D Matrix Header Controls */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-fuchsia-600 to-indigo-600 text-white shadow-lg shadow-fuchsia-600/30">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20">
             <Box className="size-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold tracking-wider text-white">
+              <span className="font-mono text-xs font-bold tracking-wider text-slate-900">
                 SMART CABINET 3D MATRIX (CAB-A)
               </span>
-              <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 font-mono text-[10px] text-emerald-700 font-semibold">
                 PHOTOREALISTIC PBR
               </span>
             </div>
-            <p className="text-[11px] font-mono text-violet-300/70">
+            <p className="text-[11px] font-mono text-slate-500">
               PHYSICAL ENCLOSURE & INTERACTIVE TELESCOPIC DRAWERS
             </p>
           </div>
@@ -765,22 +765,22 @@ export function CabinetMatrix() {
             type="button"
             data-testid="view-toggle"
             onClick={handleToggleView}
-            className="flex items-center gap-1.5 rounded-xl border border-violet-700/60 bg-violet-950/70 px-3 py-1.5 font-bold text-violet-200 transition hover:border-violet-400 hover:bg-violet-900/60 hover:text-white active:scale-95 shadow-md"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 shadow-sm"
           >
-            <Layers className="size-3.5 text-fuchsia-400" />
+            <Layers className="size-3.5 text-sky-600" />
             <span>{viewMode === 'Perspective' ? 'Isometric (3D)' : 'Perspective (3D)'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setAutoRotate(!autoRotate)}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-bold transition active:scale-95 shadow-md ${
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-semibold transition active:scale-95 shadow-sm ${
               autoRotate
-                ? 'border-fuchsia-500 bg-fuchsia-950/60 text-fuchsia-300'
-                : 'border-violet-700/60 bg-violet-950/70 text-violet-300 hover:text-white'
+                ? 'border-sky-300 bg-sky-50 text-sky-700 font-bold'
+                : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <Compass className="size-3.5 text-cyan-400" />
+            <Compass className="size-3.5 text-sky-600" />
             <span>{autoRotate ? 'Turntable: ON' : 'Turntable'}</span>
           </button>
 
@@ -788,7 +788,7 @@ export function CabinetMatrix() {
             type="button"
             onClick={handleResetCamera}
             title="Reset Camera Orientation"
-            className="flex size-8 items-center justify-center rounded-xl border border-violet-700/60 bg-violet-950/70 text-violet-300 transition hover:bg-violet-900/60 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 shadow-sm"
           >
             <RotateCcw className="size-3.5" />
           </button>
@@ -796,7 +796,7 @@ export function CabinetMatrix() {
       </div>
 
       {/* 3D WebGL Canvas Viewport */}
-      <div className="relative h-80 w-full overflow-hidden rounded-2xl border border-violet-800/40 bg-radial from-[#150a2e] to-[#05020a] shadow-inner">
+      <div className="relative h-80 w-full overflow-hidden rounded-2xl border border-slate-200 bg-radial from-slate-100 to-slate-200/60 shadow-inner">
         <canvas
           ref={canvasRef}
           data-testid="cabinet-3d-view"
@@ -805,28 +805,28 @@ export function CabinetMatrix() {
 
         {/* HUD Info Badges */}
         <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 font-mono text-[10px]">
-          <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-950/60 px-2 py-0.5 text-fuchsia-300 backdrop-blur-md">
+          <span className="rounded-md border border-slate-300 bg-white/90 px-2 py-0.5 text-slate-700 shadow-sm backdrop-blur-md font-semibold">
             PBR CHASSIS & NEMA-4X
           </span>
-          <span className="rounded-md border border-cyan-500/30 bg-cyan-950/60 px-2 py-0.5 text-cyan-300 backdrop-blur-md">
+          <span className="rounded-md border border-sky-300 bg-sky-50/90 px-2 py-0.5 text-sky-700 shadow-sm backdrop-blur-md font-semibold">
             CAMERA: {viewMode.toUpperCase()}
           </span>
           {hoveredSlotNumber && (
-            <span className="rounded-md border border-amber-500/40 bg-amber-950/60 px-2 py-0.5 text-amber-300 animate-pulse backdrop-blur-md">
+            <span className="rounded-md border border-amber-300 bg-amber-50/90 px-2 py-0.5 text-amber-800 animate-pulse shadow-sm backdrop-blur-md font-semibold">
               CLICK TO PULL DRAWER {hoveredSlotNumber}
             </span>
           )}
         </div>
 
         {/* Tactile Hint Overlay */}
-        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg border border-white/10 bg-black/50 px-2.5 py-1 font-mono text-[10px] text-zinc-400 backdrop-blur-md">
+        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg border border-slate-200 bg-white/80 px-2.5 py-1 font-mono text-[10px] text-slate-500 backdrop-blur-md shadow-sm">
           Drag to orbit 360° • Click any 3D drawer to open
         </div>
       </div>
 
       {/* Interactive Slot Grid Layout (8 Physical Slots) */}
       <div className="mt-5 flex flex-col gap-3">
-        <div className="flex items-center justify-between text-[11px] font-mono text-purple-300/70">
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
           <span>INTERACTIVE SLOTS & PICK-AND-PLACE STATUS</span>
           <span>CLICK TO INSPECT DRAWER</span>
         </div>
@@ -858,19 +858,19 @@ export function CabinetMatrix() {
                 onClick={() => handleSlotClick(slot)}
                 className={`cabinet-slot group relative flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all duration-200 outline-none ${statusClass} ${
                   isSelected
-                    ? 'ring-2 ring-fuchsia-400 bg-fuchsia-950/40 -translate-y-1 shadow-lg shadow-fuchsia-500/20'
-                    : 'bg-zinc-950/60 hover:bg-zinc-900/60 hover:-translate-y-0.5'
+                    ? 'ring-2 ring-sky-500 bg-sky-50 -translate-y-1 shadow-md shadow-sky-500/15'
+                    : 'bg-white hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-black text-white">{slot.slotNumber}</span>
+                  <span className="font-mono text-xs font-black text-slate-900">{slot.slotNumber}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 font-mono text-[9px] font-bold border ${
                       isExpired
-                        ? 'border-rose-500/50 bg-rose-500/20 text-rose-300'
+                        ? 'border-rose-200 bg-rose-50 text-rose-700'
                         : isWarning
-                        ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
-                        : 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700'
+                        : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     }`}
                   >
                     {slot.status}
@@ -878,13 +878,13 @@ export function CabinetMatrix() {
                 </div>
 
                 <div className="my-2">
-                  <p className="truncate font-mono text-xs font-bold text-white">{slot.partNumber}</p>
-                  <p className="font-mono text-[10px] text-zinc-400">
+                  <p className="truncate font-mono text-xs font-bold text-slate-900">{slot.partNumber}</p>
+                  <p className="font-mono text-[10px] text-slate-500">
                     {slot.quantity} units • {slot.remaining}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-white/5 pt-1.5 font-mono text-[10px] text-zinc-500">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 font-mono text-[10px] text-slate-400">
                   <span>{slot.temperature}</span>
                   <span>{slot.humidity}</span>
                 </div>
